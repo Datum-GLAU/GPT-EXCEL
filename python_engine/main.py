@@ -1,13 +1,12 @@
 import os
 os.environ["OPENAI_API_KEY"] = "your_key_here"
 
-from automation import run_automation
-import threading
-
 from fastapi import FastAPI, UploadFile, File
 import pandas as pd
 import shutil
+import threading
 
+from automation import start_scheduler
 from excel_generator import read_excel
 from charts import create_chart
 from analysis import analyze_data
@@ -22,14 +21,6 @@ FILE_PATH = "uploaded_file.xlsx"
 @app.get("/")
 def home():
     return {"message": "Excel GPT Python Engine Running"}
-
-# -------- BASIC FEATURES (optional) --------
-
-# @app.get("/generate-excel")
-# def generate_excel():
-#     return {"result": create_excel()}
-
-
 
 # -------- Upload --------
 @app.post("/upload")
@@ -78,16 +69,9 @@ def report():
 def process(prompt: str):
     return {"result": process_prompt(prompt, FILE_PATH)}
 
-#-------- Automation --------
+# -------- Automation (FINAL) --------
 @app.on_event("startup")
-def start_automation():
-    thread = threading.Thread(target=run_automation)
+def start_auto():
+    thread = threading.Thread(target=start_scheduler)
     thread.daemon = True
     thread.start()
-
-@app.get("/run-automation")
-def trigger_automation():
-    run_automation()
-    return {"message": "Automation started"}
-
-
