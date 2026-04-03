@@ -1,31 +1,63 @@
 const BASE = 'http://localhost:3001/api'
 
 async function req(method: string, url: string, body?: any, isFormData = false) {
-  const opts: RequestInit = { method, headers: isFormData ? {} : { 'Content-Type': 'application/json' } }
-  if (body) opts.body = isFormData ? body : JSON.stringify(body)
-  const res = await fetch(`${BASE}${url}`, opts)
-  if (!res.ok) {
-    const t = await res.text().catch(() => res.statusText)
-    throw new Error(t.slice(0, 120))
+  const opts: RequestInit = {
+    method,
+    headers: isFormData ? {} : { 'Content-Type': 'application/json' }
   }
-  return res.json()
+  if (body) opts.body = isFormData ? body : JSON.stringify(body)
+
+  console.log(`[API] ${method} ${BASE}${url}`)
+
+  try {
+    const res = await fetch(`${BASE}${url}`, opts)
+    if (!res.ok) {
+      const errText = await res.text()
+      console.error(`[API] Error ${res.status}: ${errText}`)
+      throw new Error(`HTTP ${res.status}: ${errText.slice(0, 100)}`)
+    }
+    return await res.json()
+  } catch (err: any) {
+    console.error(`[API] Request failed:`, err)
+    throw err
+  }
 }
 
 export const api = {
   health: () => req('GET', '/health'),
 
+  // Auth
   login: (email: string, password: string) => req('POST', '/auth/login', { email, password }),
   register: (name: string, email: string, department: string) => req('POST', '/auth/register', { name, email, department }),
 
-  uploadFiles: (files: File[], department: string, uploadedBy: string) => {
-    const fd = new FormData()
-    files.forEach(f => fd.append('files', f))
-    return req('POST', `/files/upload?department=${encodeURIComponent(department)}&uploadedBy=${encodeURIComponent(uploadedBy)}`, fd, true)
+  // Files
+  uploadFiles: async (files: File[], department: string, uploadedBy: string) => {
+    const formData = new FormData()
+    files.forEach(file => {
+      formData.append('files', file)
+      console.log(`[API] Adding file: ${file.name} (${file.size} bytes)`)
+    })
+    
+    const url = `/files/upload?department=${encodeURIComponent(department)}&uploadedBy=${encodeURIComponent(uploadedBy)}`
+    console.log(`[API] Uploading to: ${BASE}${url}`)
+    
+    const res = await fetch(`${BASE}${url}`, {
+      method: 'POST',
+      body: formData,
+    })
+    
+    if (!res.ok) {
+      const err = await res.text()
+      throw new Error(`Upload failed: ${err}`)
+    }
+    return res.json()
   },
+  
   getFiles: (params?: { department?: string; type?: string; search?: string }) => {
-    const q = new URLSearchParams(Object.fromEntries(Object.entries(params || {}).filter(([, v]) => v))).toString()
+    const q = new URLSearchParams(params as any).toString()
     return req('GET', `/files${q ? '?' + q : ''}`)
   },
+  
   deleteFile: (id: string) => req('DELETE', `/files/${id}`),
   browseDir: (path: string) => req('GET', `/files/browse?path=${encodeURIComponent(path)}`),
   mkdir: (path: string) => req('POST', '/files/mkdir', { path }),
@@ -34,24 +66,33 @@ export const api = {
     return req('GET', `/files/search-disk?${q}`)
   },
 
+  // Excel
+  getExcelRaw: (fileId: string) => req('GET', `/excel/raw/${fileId}`),
   analyzeFile: (fileId: string) => req('GET', `/excel/analyze/${fileId}`),
-  analyzeUpload: (file: File) => { const fd = new FormData(); fd.append('file', file); return req('POST', '/excel/analyze', fd, true) },
-  getRawSheet: (fileId: string) => req('GET', `/excel/raw/${fileId}`),
+  analyzeUpload: (file: File) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    return req('POST', '/excel/analyze', fd, true)
+  },
   compareFiles: (fileId1: string, fileId2: string) => req('POST', '/excel/compare', { fileId1, fileId2 }),
   excelCommand: (fileId: string, command: string) => req('POST', '/excel/command', { fileId, command }),
+  saveExcel: (fileId: string, rows: any[], sheetName?: string) => req('POST', `/excel/save/${fileId}`, { rows, sheetName }),
   generateExcel: (data: any[], filename: string, sheetName?: string, department?: string) =>
     req('POST', '/excel/generate', { data, filename, sheetName, department }),
-  saveSheet: (fileId: string, rows: any[], sheetName: string) =>
-    req('POST', `/excel/save/${fileId}`, { rows, sheetName }),
 
+  // Workflows
   getWorkflows: () => req('GET', '/workflows'),
   createWorkflow: (data: any) => req('POST', '/workflows', data),
   updateWorkflow: (id: string, data: any) => req('PATCH', `/workflows/${id}`, data),
   deleteWorkflow: (id: string) => req('DELETE', `/workflows/${id}`),
   runWorkflow: (id: string) => req('POST', `/workflows/${id}/run`),
 
+  // Documents
   generateDoc: (type: string, data: any, title: string) => req('POST', '/documents/generate', { type, data, title }),
+  generatePpt: (payload: { prompt: string; data?: any; audience?: string; theme?: string; goal?: string; department?: string }) =>
+    req('POST', '/ppt/generate', payload),
 
+  // Dashboard
   getDashboardStats: () => req('GET', '/dashboard/stats'),
   getUsers: () => req('GET', '/users'),
 }

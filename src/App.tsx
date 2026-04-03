@@ -10,7 +10,7 @@ import FileManager from './pages/FileManager'
 import Workflow from './pages/Workflow'
 import Documents from './pages/Documents'
 import VoiceAssistant from './pages/VoiceAssistant'
-import PowerPointGenerator from './pages/PowerPointGenerator'
+import PowerPointStudio from './pages/PowerPointStudio'
 import PluginMarketplace from './pages/PluginMarketplace'
 
 export default function App() {
@@ -38,7 +38,7 @@ export default function App() {
         <Route path="/workflow" element={<Workflow />} />
         <Route path="/documents" element={<Documents />} />
         <Route path="/voice" element={<VoiceAssistant />} />
-        <Route path="/powerpoint" element={<PowerPointGenerator />} />
+        <Route path="/powerpoint" element={<PowerPointStudio />} />
         <Route path="/plugins" element={<PluginMarketplace />} />
       </Routes>
     </HashRouter>
