@@ -1,5 +1,5 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
 def analyze_data(file_path: str) -> dict:
@@ -42,7 +42,8 @@ def analyze_data(file_path: str) -> dict:
         summary["numpy_stats"] = np_stats
 
     try:
-        summary["statistics"] = df.describe().round(2).to_dict()
+        stats = df.describe(include="all", datetime_is_numeric=True).round(2).fillna("")
+        summary["statistics"] = stats.to_dict()
     except Exception:
         summary["statistics"] = "Not applicable"
 

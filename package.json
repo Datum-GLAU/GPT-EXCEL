@@ -9,8 +9,8 @@
     "dist": "npm run build && electron-builder"
   },
   "build": {
-    "appId": "com.datum.gptexcel",
-    "productName": "GPT-EXCEL",
+    "appId": "com.datum.xtronexcel",
+    "productName": "XtronExcel",
     "directories": {
       "output": "release"
     },

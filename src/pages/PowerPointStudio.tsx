@@ -207,10 +207,10 @@ export default function PowerPointStudio() {
           )}
 
           <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: 14, marginBottom: 24 }}>
-            <div style={{ padding: '18px 20px', borderRadius: 18, background: 'linear-gradient(135deg, rgba(249,115,22,0.18), rgba(15,23,42,0.95))', border: '1px solid rgba(251,146,60,0.22)' }}>
-              <div style={{ fontSize: '0.72rem', color: '#fdba74', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>AI Presentation Studio</div>
-              <div style={{ fontSize: '1.08rem', color: '#fff7ed', fontWeight: 700, marginBottom: 6 }}>Turn workbook data into a deck with a narrative</div>
-              <div style={{ fontSize: '0.8rem', color: '#ffedd5', lineHeight: 1.65 }}>
+            <div style={{ padding: '18px 20px', borderRadius: 18, background: 'linear-gradient(135deg, color-mix(in srgb, var(--surface-3) 82%, var(--orange) 18%), color-mix(in srgb, var(--surface-3) 60%, var(--orange) 40%))', border: '1px solid color-mix(in srgb, var(--border-hi) 74%, var(--orange) 26%)', boxShadow: '0 12px 28px var(--accent-dim2)' }}>
+              <div style={{ fontSize: '0.72rem', color: 'var(--orange)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>AI Presentation Studio</div>
+              <div style={{ fontSize: '1.08rem', color: 'var(--text)', fontWeight: 700, marginBottom: 6 }}>Turn workbook data into a deck with a narrative</div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.65 }}>
                 Give the AI a goal, audience, and theme. It will build a clean slide flow, suggest chart moments, and prepare speaker notes you can keep refining from the assistant panel.
               </div>
             </div>
@@ -265,10 +265,10 @@ export default function PowerPointStudio() {
           </div>
 
           {generating && (
-            <div style={{ padding: '18px 20px', borderRadius: 16, background: 'linear-gradient(135deg, rgba(249,115,22,0.12), rgba(15,23,42,0.92))', border: '1px solid rgba(251,146,60,0.18)', marginBottom: 24 }}>
-              <div style={{ fontSize: '0.72rem', color: '#fdba74', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>AI Processing</div>
-              <div style={{ fontSize: '1rem', color: '#fff7ed', fontWeight: 700, marginBottom: 6 }}>Building the deck from your workbook context</div>
-              <div style={{ fontSize: '0.82rem', color: '#fed7aa', lineHeight: 1.6 }}>
+            <div style={{ padding: '18px 20px', borderRadius: 16, background: 'linear-gradient(135deg, color-mix(in srgb, var(--surface-3) 84%, var(--orange) 16%), color-mix(in srgb, var(--surface-3) 62%, var(--orange) 38%))', border: '1px solid color-mix(in srgb, var(--border-hi) 78%, var(--orange) 22%)', marginBottom: 24, boxShadow: '0 12px 28px var(--accent-dim2)' }}>
+              <div style={{ fontSize: '0.72rem', color: 'var(--orange)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>AI Processing</div>
+              <div style={{ fontSize: '1rem', color: 'var(--text)', fontWeight: 700, marginBottom: 6 }}>Building the deck from your workbook context</div>
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                 The AI is reading the Excel notes, drafting slide structure, and preparing chart moments and speaker notes.
               </div>
             </div>
@@ -277,12 +277,12 @@ export default function PowerPointStudio() {
           {slides.length > 0 && (
             <div>
               <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 14, marginBottom: 18 }}>
-                <div style={{ padding: '18px 20px', borderRadius: 18, background: 'linear-gradient(145deg, rgba(30,41,59,0.98), rgba(15,23,42,0.95))', border: '1px solid rgba(148,163,184,0.16)' }}>
-                  <div style={{ fontSize: '0.7rem', color: '#93c5fd', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Deck Summary</div>
-                  <div style={{ fontSize: '1.25rem', color: '#f8fafc', fontWeight: 800, marginBottom: 8 }}>{prompt || 'AI Presentation'}</div>
+                <div style={{ padding: '18px 20px', borderRadius: 18, background: 'linear-gradient(145deg, var(--surface-3), color-mix(in srgb, var(--surface-3) 78%, var(--orange) 22%))', border: '1px solid var(--border-hi)', boxShadow: '0 12px 28px var(--accent-dim2)' }}>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--orange)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Deck Summary</div>
+                  <div style={{ fontSize: '1.25rem', color: 'var(--text)', fontWeight: 800, marginBottom: 8 }}>{prompt || 'AI Presentation'}</div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     {[`Theme: ${theme}`, `Audience: ${audience}`, `Goal: ${goal}`, `${slides.length} slides`].map(item => (
-                      <span key={item} style={{ padding: '5px 9px', borderRadius: 999, background: 'rgba(59,130,246,0.12)', color: '#dbeafe', fontSize: '0.68rem', border: '1px solid rgba(96,165,250,0.16)' }}>{item}</span>
+                      <span key={item} style={{ padding: '5px 9px', borderRadius: 999, background: 'color-mix(in srgb, var(--surface) 76%, var(--orange) 24%)', color: 'var(--text)', fontSize: '0.68rem', border: '1px solid color-mix(in srgb, var(--border-hi) 72%, var(--orange) 28%)' }}>{item}</span>
                     ))}
                   </div>
                 </div>
@@ -320,7 +320,7 @@ export default function PowerPointStudio() {
           )}
         </main>
         <WorkspaceAssistant
-          title="PPT AI"
+          title="Xtron"
           subtitle="Ask for stronger structure, different audiences, more charts, or sharper slide writing."
           placeholder="Ask AI to regenerate slides, change tone, add sections, or rewrite for a new audience..."
           initialMessage="I can help turn your workbook data into a better slide deck, one refinement at a time."

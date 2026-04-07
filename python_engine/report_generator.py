@@ -4,7 +4,7 @@ from analysis import analyze_data
 
 def generate_report(file_path: str, output_path: str = "report.txt") -> str:
     try:
-        df = pd.read_excel(file_path)
+        pd.read_excel(file_path)
     except Exception as e:
         return f"Could not read file: {str(e)}"
 
@@ -12,7 +12,7 @@ def generate_report(file_path: str, output_path: str = "report.txt") -> str:
 
     lines = [
         "=" * 50,
-        "         GPT EXCEL — DATA REPORT",
+        "         XtronExcel — DATA REPORT",
         "=" * 50,
         f"File        : {file_path}",
         f"Total Rows  : {analysis['total_rows']}",
@@ -34,7 +34,13 @@ def generate_report(file_path: str, output_path: str = "report.txt") -> str:
         for col, stats in analysis["statistics"].items():
             lines.append(f"\n  [{col}]")
             for stat_name, val in stats.items():
-                lines.append(f"    {stat_name}: {round(val, 2)}")
+                if val == "":
+                    continue
+                try:
+                    rendered = round(float(val), 2)
+                except Exception:
+                    rendered = val
+                lines.append(f"    {stat_name}: {rendered}")
     else:
         lines.append("  Not applicable")
 
@@ -43,7 +49,7 @@ def generate_report(file_path: str, output_path: str = "report.txt") -> str:
     report_text = "\n".join(lines)
 
     try:
-        with open(output_path, "w") as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             f.write(report_text)
     except Exception as e:
         return f"Could not save report: {str(e)}"

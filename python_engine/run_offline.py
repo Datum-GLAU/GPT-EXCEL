@@ -1,14 +1,16 @@
 import os
 import sys
+import argparse
 from analysis import analyze_data
 from charts import create_chart
 from report_generator import generate_report
 from data_cleaning import clean_data
-from excel_generator import generate_advanced_excel
+from excel_generator import create_excel_template, generate_advanced_excel, read_excel
 from word_generator import generate_word_report
 from ppt_generator import generate_ppt
-from file_segmentation import get_file_info
-from sqlite_storage import save_file_record, save_analysis, save_generated_file, log_automation
+from file_segmentation import get_file_info, merge_excel_files, segment_by_row_count
+from SQLite_storage import save_file_record, save_analysis, save_generated_file, log_automation
+from utils import ensure_directory, unique_output_path
 
 
 def run_all(file_path: str, output_dir: str = "offline_outputs"):
@@ -16,11 +18,11 @@ def run_all(file_path: str, output_dir: str = "offline_outputs"):
         print(f"[Offline] File not found: {file_path}")
         return
 
-    os.makedirs(output_dir, exist_ok=True)
-    out = lambda name: os.path.join(output_dir, name)
+    ensure_directory(output_dir)
+    out = lambda name: unique_output_path(output_dir, name)
 
     print(f"\n{'='*55}")
-    print(f"  GPT EXCEL — Offline Runner v2.0")
+    print(f"  XtronExcel — Offline Runner v2.0")
     print(f"  File : {file_path}")
     print(f"  Out  : {output_dir}/")
     print(f"{'='*55}\n")
@@ -81,10 +83,79 @@ def run_all(file_path: str, output_dir: str = "offline_outputs"):
     print(f"{'='*55}\n")
 
 
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage  : python run_offline.py <path_to_excel_file> [output_dir]")
-        print("Example: python run_offline.py data.xlsx my_outputs")
+def run_single_command(command: str, file_path: str | None, output_dir: str, extra_files: list[str] | None = None):
+    ensure_directory(output_dir)
+
+    if command == "template":
+        output_path = unique_output_path(output_dir, "excel_template.xlsx")
+        print(create_excel_template(output_path=output_path))
+        return
+
+    if command == "merge":
+        if not extra_files or len(extra_files) < 2:
+            print("Merge requires at least two input files.")
+            return
+        output_path = unique_output_path(output_dir, "merged_output.xlsx")
+        print(merge_excel_files(extra_files, output_path=output_path))
+        return
+
+    if not file_path:
+        print(f"Command '{command}' requires an Excel file path.")
+        return
+
+    if not os.path.exists(file_path):
+        print(f"Input file not found: {file_path}")
+        return
+
+    if command == "info":
+        print(get_file_info(file_path))
+    elif command == "preview":
+        print(read_excel(file_path, limit=10))
+    elif command == "analyze":
+        print(analyze_data(file_path))
+    elif command == "clean":
+        output_path = unique_output_path(output_dir, "cleaned_data.xlsx")
+        print(clean_data(file_path, output_path=output_path))
+    elif command == "chart":
+        output_path = unique_output_path(output_dir, "chart.png")
+        print(create_chart(file_path, output_path=output_path))
+    elif command == "report":
+        output_path = unique_output_path(output_dir, "report.txt")
+        print(generate_report(file_path, output_path=output_path))
+    elif command == "excel":
+        output_path = unique_output_path(output_dir, "advanced_output.xlsx")
+        print(generate_advanced_excel(file_path, output_path=output_path))
+    elif command == "word":
+        output_path = unique_output_path(output_dir, "report.docx")
+        print(generate_word_report(file_path, output_path=output_path))
+    elif command == "ppt":
+        output_path = unique_output_path(output_dir, "report.pptx")
+        print(generate_ppt(file_path, output_path=output_path))
+    elif command == "split":
+        print(segment_by_row_count(file_path, chunk_size=500, output_dir=output_dir))
+    elif command == "pipeline":
+        run_all(file_path, output_dir)
     else:
-        output_dir = sys.argv[2] if len(sys.argv) > 2 else "offline_outputs"
-        run_all(sys.argv[1], output_dir)
+        print(f"Unknown command: {command}")
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Offline utilities for the GPT Excel Python engine")
+    parser.add_argument(
+        "command",
+        choices=["pipeline", "info", "preview", "analyze", "clean", "chart", "report", "excel", "word", "ppt", "split", "template", "merge"],
+        nargs="?",
+        default="pipeline",
+        help="Offline command to run",
+    )
+    parser.add_argument("file", nargs="?", help="Path to an Excel file")
+    parser.add_argument("--output-dir", default="offline_outputs", help="Directory for generated files")
+    parser.add_argument("--files", nargs="*", help="Additional files for merge")
+    return parser
+
+
+if __name__ == "__main__":
+    parser = build_parser()
+    args = parser.parse_args()
+    extra_files = [args.file] + (args.files or []) if args.command == "merge" and args.file else args.files
+    run_single_command(args.command, args.file, args.output_dir, extra_files)

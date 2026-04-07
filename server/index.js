@@ -499,7 +499,7 @@ app.post('/api/llm/stream', async (req, res) => {
 
   await streamLLM(
     prompt,
-    'You are GPT-EXCEL, expert AI for student data analysis. Be concise and use actual data.',
+    'You are Xtron, expert AI for student data analysis. Be concise and use actual data.',
     keys,
     (text) => res.write(`data: ${JSON.stringify({ text })}\n\n`),
     () => { res.write(`data: ${JSON.stringify({ done: true })}\n\n`); res.end() },

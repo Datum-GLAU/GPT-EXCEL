@@ -61,8 +61,7 @@ export default function Header({ toggleSidebar }: Props) {
 
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, WebkitAppRegion: 'no-drag' as any, cursor: 'pointer' }} onClick={() => nav('/dashboard')}>
-          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 13, letterSpacing: -0.5, color: 'var(--text)' }}>GPT</span>
-          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 13, letterSpacing: -0.5, background: 'var(--blue)', color: '#fff', padding: '1px 6px', borderRadius: 3 }}>EXCEL</span>
+          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 13, letterSpacing: -0.5, color: 'var(--text)' }}>XtronExcel</span>
         </div>
 
         {/* Command search */}
@@ -80,7 +79,7 @@ export default function Header({ toggleSidebar }: Props) {
 
           {/* Theme toggle */}
           <button className="btn btn-icon-sm btn-ghost" onClick={() => setDark(d => !d)} data-tip={dark ? 'Light mode' : 'Dark mode'}
-            style={{ color: 'var(--text-sec)' }}
+            style={{ color: 'var(--text-secondary)' }}
           >
             {dark ? (
               <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
@@ -99,7 +98,7 @@ export default function Header({ toggleSidebar }: Props) {
 
           {/* Notifications */}
           <div style={{ position: 'relative' }}>
-            <button className="btn btn-icon-sm btn-ghost" onClick={() => { setShowNotifs(p => !p); setShowProfile(false) }} style={{ position: 'relative', color: 'var(--text-sec)' }}>
+            <button className="btn btn-icon-sm btn-ghost" onClick={() => { setShowNotifs(p => !p); setShowProfile(false) }} style={{ position: 'relative', color: 'var(--text-secondary)' }}>
               <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
               </svg>
@@ -144,13 +143,13 @@ export default function Header({ toggleSidebar }: Props) {
                 </div>
                 {[{ icon: '◱', label: 'Profile' }, { icon: '⊞', label: 'API Keys' }, { icon: '◈', label: 'Integrations' }, { icon: '⌘', label: 'Shortcuts' }].map(item => (
                   <div key={item.label} className="ctx-item" onClick={() => { setShowProfile(false); nav('/settings') }}>
-                    <span style={{ fontSize: 12, color: 'var(--text-sec)' }}>{item.icon}</span>
+                    <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{item.icon}</span>
                     <span style={{ fontSize: '0.8rem', color: 'var(--text)' }}>{item.label}</span>
                   </div>
                 ))}
                 <div className="ctx-separator"/>
                 <div className="ctx-item" onClick={() => { setShowProfile(false); nav('/get-started') }}>
-                  <span style={{ fontSize: 12, color: 'var(--text-sec)' }}>→</span>
+                  <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>→</span>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text)' }}>Sign out</span>
                 </div>
               </div>

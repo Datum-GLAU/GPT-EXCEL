@@ -2,7 +2,7 @@ from analysis import analyze_data
 from charts import create_chart
 from report_generator import generate_report
 from data_cleaning import clean_data
-from excel_generator import read_excel, generate_advanced_excel
+from excel_generator import read_excel, generate_advanced_excel, create_excel_template
 from word_generator import generate_word_report
 from ppt_generator import generate_ppt
 from file_segmentation import (
@@ -22,6 +22,7 @@ KEYWORD_MAP = {
     "ppt":      ["ppt", "powerpoint", "presentation", "slides", "deck"],
     "segment":  ["segment", "split", "divide", "chunk", "partition"],
     "merge":    ["merge", "combine", "join files"],
+    "template": ["template", "blank excel", "sample excel", "create sheet"],
     "info":     ["info", "file info", "details", "file details"],
 }
 
@@ -91,6 +92,9 @@ def process_prompt(file_path: str, prompt: str) -> dict:
         if col:
             return {"task": "segment", "result": segment_by_column(file_path, col)}
         return {"task": "segment", "result": segment_by_row_count(file_path, chunk_size=500)}
+
+    elif task == "template":
+        return {"task": "template", "result": create_excel_template()}
 
     elif task == "info":
         return {"task": "info", "result": get_file_info(file_path)}

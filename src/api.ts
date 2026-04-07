@@ -1,4 +1,5 @@
 const BASE = 'http://localhost:3001/api'
+const PYTHON_BASE = 'http://127.0.0.1:8001'
 
 async function req(method: string, url: string, body?: any, isFormData = false) {
   const opts: RequestInit = {
@@ -25,6 +26,7 @@ async function req(method: string, url: string, body?: any, isFormData = false) 
 
 export const api = {
   health: () => req('GET', '/health'),
+  pythonHealth: () => reqAbsolute(PYTHON_BASE, 'GET', '/'),
 
   // Auth
   login: (email: string, password: string) => req('POST', '/auth/login', { email, password }),
@@ -92,7 +94,77 @@ export const api = {
   generatePpt: (payload: { prompt: string; data?: any; audience?: string; theme?: string; goal?: string; department?: string }) =>
     req('POST', '/ppt/generate', payload),
 
+  // Python engine
+  pythonRead: (file: File, limit = 25) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    return reqAbsolute(PYTHON_BASE, 'POST', `/read?limit=${limit}`, fd, true)
+  },
+  pythonAnalyze: (file: File) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    return reqAbsolute(PYTHON_BASE, 'POST', '/analyze', fd, true)
+  },
+  pythonChart: (file: File, chartType = 'auto') => {
+    const fd = new FormData()
+    fd.append('file', file)
+    return reqAbsolute(PYTHON_BASE, 'POST', `/chart?chart_type=${encodeURIComponent(chartType)}`, fd, true)
+  },
+  pythonClean: (file: File) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    return reqAbsolute(PYTHON_BASE, 'POST', '/clean', fd, true)
+  },
+  pythonReport: (file: File) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    return reqAbsolute(PYTHON_BASE, 'POST', '/report', fd, true)
+  },
+  pythonWord: (file: File) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    return reqAbsolute(PYTHON_BASE, 'POST', '/word', fd, true)
+  },
+  pythonPpt: (file: File) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    return reqAbsolute(PYTHON_BASE, 'POST', '/ppt', fd, true)
+  },
+  pythonAdvancedExcel: (file: File) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    return reqAbsolute(PYTHON_BASE, 'POST', '/excel-advanced', fd, true)
+  },
+  pythonTemplate: (rows = 10, includeSampleData = true) =>
+    reqAbsolute(PYTHON_BASE, 'POST', `/template?rows=${rows}&include_sample_data=${includeSampleData}`),
+  pythonProcess: (file: File, prompt: string) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    return reqAbsolute(PYTHON_BASE, 'POST', `/process?prompt=${encodeURIComponent(prompt)}`, fd, true)
+  },
+  pythonDownloadUrl: (path: string) => `${PYTHON_BASE}/download?path=${encodeURIComponent(path)}`,
+
   // Dashboard
   getDashboardStats: () => req('GET', '/dashboard/stats'),
   getUsers: () => req('GET', '/users'),
+}
+
+async function reqAbsolute(base: string, method: string, url: string, body?: any, isFormData = false) {
+  const opts: RequestInit = {
+    method,
+    headers: isFormData ? {} : { 'Content-Type': 'application/json' }
+  }
+  if (body) opts.body = isFormData ? body : JSON.stringify(body)
+
+  try {
+    const res = await fetch(`${base}${url}`, opts)
+    if (!res.ok) {
+      const errText = await res.text()
+      throw new Error(`HTTP ${res.status}: ${errText.slice(0, 140)}`)
+    }
+    return await res.json()
+  } catch (err: any) {
+    console.error(`[API] Absolute request failed:`, err)
+    throw err
+  }
 }

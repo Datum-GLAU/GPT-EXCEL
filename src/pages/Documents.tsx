@@ -181,10 +181,10 @@ export default function Documents() {
           )}
 
           <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 14, marginBottom: 20 }}>
-            <div style={{ padding: '16px 18px', borderRadius: 16, background: 'linear-gradient(135deg, rgba(29,78,216,0.18), rgba(15,23,42,0.92))', border: '1px solid rgba(96,165,250,0.2)' }}>
-              <div style={{ fontSize: '0.72rem', color: '#bfdbfe', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>AI Document Studio</div>
-              <div style={{ fontSize: '1.05rem', color: '#f8fafc', fontWeight: 700, marginBottom: 6 }}>Structured writing from workbook data</div>
-              <div style={{ fontSize: '0.8rem', color: '#dbeafe', lineHeight: 1.65 }}>
+            <div style={{ padding: '16px 18px', borderRadius: 16, background: 'linear-gradient(135deg, color-mix(in srgb, var(--surface-3) 82%, var(--blue) 18%), color-mix(in srgb, var(--surface-3) 60%, var(--blue) 40%))', border: '1px solid color-mix(in srgb, var(--border-hi) 74%, var(--blue) 26%)', boxShadow: '0 12px 28px var(--accent-dim2)' }}>
+              <div style={{ fontSize: '0.72rem', color: 'var(--blue)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>AI Document Studio</div>
+              <div style={{ fontSize: '1.05rem', color: 'var(--text)', fontWeight: 700, marginBottom: 6 }}>Structured writing from workbook data</div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.65 }}>
                 Ask for reports, notices, proposals, summaries, or policy-style documents. The AI uses sheet context, department context, and your prompt to draft something you can refine in chat.
               </div>
             </div>
@@ -212,10 +212,10 @@ export default function Documents() {
           </div>
 
           {generating && (
-            <div style={{ padding: '18px 20px', borderRadius: 16, background: 'linear-gradient(135deg, rgba(29,78,216,0.14), rgba(15,23,42,0.94))', border: '1px solid rgba(96,165,250,0.16)', marginBottom: 20 }}>
-              <div style={{ fontSize: '0.72rem', color: '#bfdbfe', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>AI Processing</div>
-              <div style={{ fontSize: '1rem', color: '#eff6ff', fontWeight: 700, marginBottom: 6 }}>Drafting from the Excel sheet context</div>
-              <div style={{ fontSize: '0.82rem', color: '#dbeafe', lineHeight: 1.65 }}>
+            <div style={{ padding: '18px 20px', borderRadius: 16, background: 'linear-gradient(135deg, color-mix(in srgb, var(--surface-3) 84%, var(--blue) 16%), color-mix(in srgb, var(--surface-3) 62%, var(--blue) 38%))', border: '1px solid color-mix(in srgb, var(--border-hi) 78%, var(--blue) 22%)', marginBottom: 20, boxShadow: '0 12px 28px var(--accent-dim2)' }}>
+              <div style={{ fontSize: '0.72rem', color: 'var(--blue)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>AI Processing</div>
+              <div style={{ fontSize: '1rem', color: 'var(--text)', fontWeight: 700, marginBottom: 6 }}>Drafting from the Excel sheet context</div>
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.65 }}>
                 The AI is using workbook details, the selected document type, and your prompt to build a structured draft.
               </div>
             </div>
@@ -305,7 +305,7 @@ export default function Documents() {
                   <button className={`btn btn-sm ${previewMode === 'read' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setPreviewMode('read')}>Read</button>
                   <button className={`btn btn-sm ${previewMode === 'present' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setPreviewMode('present')}>Present</button>
                 </div>
-                <div style={{ flex: 1, overflowY: 'auto', background: previewMode === 'present' ? 'linear-gradient(145deg, rgba(29,78,216,0.12), rgba(15,23,42,0.95))' : 'var(--surface-2)', borderRadius: 8, padding: previewMode === 'present' ? 24 : 16, fontFamily: previewMode === 'present' ? 'var(--font-body)' : 'var(--font-mono)', fontSize: previewMode === 'present' ? '0.98rem' : '0.78rem', lineHeight: previewMode === 'present' ? 1.9 : 1.7, color: previewMode === 'present' ? '#f8fafc' : 'var(--text-secondary)', whiteSpace: 'pre-wrap', maxHeight: 400, border: previewMode === 'present' ? '1px solid rgba(96,165,250,0.16)' : 'none' }}>
+                <div style={{ flex: 1, overflowY: 'auto', background: previewMode === 'present' ? 'linear-gradient(145deg, color-mix(in srgb, var(--surface-3) 84%, var(--blue) 16%), color-mix(in srgb, var(--surface-3) 60%, var(--blue) 40%))' : 'var(--surface-2)', borderRadius: 8, padding: previewMode === 'present' ? 24 : 16, fontFamily: previewMode === 'present' ? 'var(--font-body)' : 'var(--font-mono)', fontSize: previewMode === 'present' ? '0.98rem' : '0.78rem', lineHeight: previewMode === 'present' ? 1.9 : 1.7, color: previewMode === 'present' ? 'var(--text)' : 'var(--text-secondary)', whiteSpace: 'pre-wrap', maxHeight: 400, border: previewMode === 'present' ? '1px solid var(--border-hi)' : 'none' }}>
                   {openedDoc.content}
                 </div>
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
@@ -318,7 +318,7 @@ export default function Documents() {
           )}
         </main>
         <WorkspaceAssistant
-          title="Document AI"
+          title="Xtron"
           subtitle="Refine drafts, regenerate, or create formal documents from workbook context."
           placeholder="Ask AI to rewrite, expand, formalize, shorten, or create another document..."
           initialMessage="I can help you create polished reports, notices, proposals, and formal documents from your data."

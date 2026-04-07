@@ -1,9 +1,11 @@
-import sqlite3
 import json
 import os
+import sqlite3
 from datetime import datetime
+from pathlib import Path
 
-DB_PATH = os.environ.get("GPT_EXCEL_DB", "gpt_excel.db")
+BASE_DIR = Path(__file__).resolve().parent
+DB_PATH = os.environ.get("GPT_EXCEL_DB", str(BASE_DIR / "gpt_excel.db"))
 
 
 def get_connection() -> sqlite3.Connection:
@@ -13,7 +15,6 @@ def get_connection() -> sqlite3.Connection:
 
 
 def init_db() -> None:
-    """Create all tables if they don't exist."""
     conn = get_connection()
     cur = conn.cursor()
 
@@ -56,22 +57,29 @@ def init_db() -> None:
     conn.close()
 
 
-# ── Uploaded Files ────────────────────────────────────────────────────────────
-
-def save_file_record(filename: str, file_path: str,
-                     row_count: int = 0, col_count: int = 0,
-                     columns: list = None) -> int:
+def save_file_record(
+    filename: str,
+    file_path: str,
+    row_count: int = 0,
+    col_count: int = 0,
+    columns: list | None = None,
+) -> int:
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("""
+    cur.execute(
+        """
         INSERT INTO uploaded_files (filename, file_path, uploaded_at, row_count, col_count, columns)
         VALUES (?, ?, ?, ?, ?, ?)
-    """, (
-        filename, file_path,
-        datetime.now().isoformat(),
-        row_count, col_count,
-        json.dumps(columns or [])
-    ))
+        """,
+        (
+            filename,
+            file_path,
+            datetime.now().isoformat(),
+            row_count,
+            col_count,
+            json.dumps(columns or []),
+        ),
+    )
     file_id = cur.lastrowid
     conn.commit()
     conn.close()
@@ -96,15 +104,16 @@ def get_file_by_id(file_id: int) -> dict | None:
     return dict(row) if row else None
 
 
-# ── Analysis Results ──────────────────────────────────────────────────────────
-
 def save_analysis(file_id: int, task: str, result: dict) -> int:
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("""
+    cur.execute(
+        """
         INSERT INTO analysis_results (file_id, task, result_json, created_at)
         VALUES (?, ?, ?, ?)
-    """, (file_id, task, json.dumps(result), datetime.now().isoformat()))
+        """,
+        (file_id, task, json.dumps(result), datetime.now().isoformat()),
+    )
     row_id = cur.lastrowid
     conn.commit()
     conn.close()
@@ -116,27 +125,28 @@ def get_analysis_by_file(file_id: int) -> list:
     cur = conn.cursor()
     cur.execute(
         "SELECT * FROM analysis_results WHERE file_id = ? ORDER BY created_at DESC",
-        (file_id,)
+        (file_id,),
     )
     rows = [dict(r) for r in cur.fetchall()]
-    for r in rows:
+    for row in rows:
         try:
-            r["result_json"] = json.loads(r["result_json"])
+            row["result_json"] = json.loads(row["result_json"])
         except Exception:
             pass
     conn.close()
     return rows
 
 
-# ── Generated Files ───────────────────────────────────────────────────────────
-
 def save_generated_file(file_id: int, output_type: str, output_path: str) -> int:
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("""
+    cur.execute(
+        """
         INSERT INTO generated_files (file_id, output_type, output_path, created_at)
         VALUES (?, ?, ?, ?)
-    """, (file_id, output_type, output_path, datetime.now().isoformat()))
+        """,
+        (file_id, output_type, output_path, datetime.now().isoformat()),
+    )
     row_id = cur.lastrowid
     conn.commit()
     conn.close()
@@ -148,22 +158,23 @@ def get_generated_files(file_id: int) -> list:
     cur = conn.cursor()
     cur.execute(
         "SELECT * FROM generated_files WHERE file_id = ? ORDER BY created_at DESC",
-        (file_id,)
+        (file_id,),
     )
     rows = [dict(r) for r in cur.fetchall()]
     conn.close()
     return rows
 
 
-# ── Automation Logs ───────────────────────────────────────────────────────────
-
 def log_automation(task: str, status: str, message: str = "") -> None:
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("""
+    cur.execute(
+        """
         INSERT INTO automation_logs (task, status, message, ran_at)
         VALUES (?, ?, ?, ?)
-    """, (task, status, message, datetime.now().isoformat()))
+        """,
+        (task, status, message, datetime.now().isoformat()),
+    )
     conn.commit()
     conn.close()
 
@@ -173,14 +184,12 @@ def get_automation_logs(limit: int = 50) -> list:
     cur = conn.cursor()
     cur.execute(
         "SELECT * FROM automation_logs ORDER BY ran_at DESC LIMIT ?",
-        (limit,)
+        (limit,),
     )
     rows = [dict(r) for r in cur.fetchall()]
     conn.close()
     return rows
 
-
-# ── Stats ─────────────────────────────────────────────────────────────────────
 
 def get_db_stats() -> dict:
     conn = get_connection()
@@ -193,5 +202,4 @@ def get_db_stats() -> dict:
     return stats
 
 
-# Auto-init on import
 init_db()

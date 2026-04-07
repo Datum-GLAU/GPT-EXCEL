@@ -15,7 +15,7 @@ async function callGemini(prompt, systemPrompt, jsonMode = false, apiKey) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`
   const system = systemPrompt || (jsonMode
     ? 'You are a data manipulation AI. Respond with valid JSON only. No markdown fences, no explanation, just raw JSON.'
-    : 'You are GPT-EXCEL, an expert AI assistant for student data analysis. Be concise, specific, and helpful.')
+    : 'You are Xtron, an expert AI assistant for student data analysis. Be concise, specific, and helpful.')
 
   const res = await fetch(url, {
     method: 'POST',
@@ -48,7 +48,7 @@ async function callHuggingFace(prompt, systemPrompt, jsonMode = false, apiKey) {
 
   const system = systemPrompt || (jsonMode
     ? 'You are a data manipulation AI. Respond with valid JSON only. No markdown fences, no explanation, just raw JSON.'
-    : 'You are GPT-EXCEL, an expert AI assistant for student data analysis. Be concise, specific, and helpful.')
+    : 'You are Xtron, an expert AI assistant for student data analysis. Be concise, specific, and helpful.')
 
   try {
     const res = await fetch(HF_CHAT_URL, {
@@ -94,7 +94,7 @@ async function streamGemini(prompt, systemPrompt, apiKey, onChunk, onDone, onErr
   if (!key) { onError('NO_GEMINI_KEY'); return false }
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:streamGenerateContent?alt=sse&key=${key}`
-  const system = systemPrompt || 'You are GPT-EXCEL, expert AI for student data analysis. Be concise and use actual data.'
+  const system = systemPrompt || 'You are Xtron, expert AI for student data analysis. Be concise and use actual data.'
 
   try {
     const res = await fetch(url, {
@@ -149,7 +149,7 @@ async function streamHuggingFace(prompt, systemPrompt, apiKey, onChunk, onDone, 
   const key = apiKey || process.env.HF_API_KEY
   if (!key) { onError('NO_HF_KEY'); return }
 
-  const system = systemPrompt || 'You are GPT-EXCEL, expert AI for student data analysis.'
+  const system = systemPrompt || 'You are Xtron, expert AI for student data analysis.'
 
   try {
     const res = await fetch(HF_CHAT_URL, {

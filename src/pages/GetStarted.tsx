@@ -6,19 +6,19 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 
 
 const FEATURES = [
-  { icon: '⊞', title: 'Excel AI Engine', desc: 'Natural language → production-ready Excel files with formulas, pivot tables, charts, and complete financial models from a single prompt.', tags: ['VLOOKUP', 'Pivot', 'Charts', 'Macros'], stat: '200+ formula types', color: 'var(--green)' },
-  { icon: '◱', title: 'Document Intelligence', desc: 'Generate reports, proposals, contracts, and CVs. Multi-doc comparison, summarization, grammar correction, and instant PDF export.', tags: ['Reports', 'Contracts', 'Research', 'CVs'], stat: '50+ templates', color: 'var(--blue)' },
-  { icon: '◈', title: 'Smart File Manager', desc: 'AI-powered file categorization using semantic embeddings. Auto-tag, cluster, deduplicate, and intelligently search your entire workspace.', tags: ['Auto-Tag', 'Search', 'Dedup', 'Cluster'], stat: 'Embedding-based', color: 'var(--purple)' },
-  { icon: '⌘', title: 'Workflow Automation', desc: 'Build drag-and-drop automation workflows. Schedule recurring reports, automate email drafts, and create powerful AI-driven task pipelines.', tags: ['Schedule', 'Automate', 'Tasks', 'Pipelines'], stat: 'Drag & drop builder', color: 'var(--orange)' },
-  { icon: '◎', title: 'Voice Commands', desc: 'Hands-free via Web Speech API + Whisper. Voice-to-Excel, voice document creation, and real-time text-to-speech responses.', tags: ['Whisper', 'TTS', 'Offline', 'Live'], stat: 'Real-time transcription', color: 'var(--teal)' },
-  { icon: '◬', title: 'Data Visualization', desc: 'Interactive charts, financial dashboards, KPI monitors, and predictive forecasting graphs. 20+ chart types with full customization.', tags: ['Charts', 'KPI', 'Forecast', 'Dashboard'], stat: '20+ chart types', color: 'var(--yellow)' },
-  { icon: '◻', title: 'PowerPoint Generator', desc: 'Auto-generate pitch decks with embedded charts and speaker notes. Custom themes, AI-written slide content.', tags: ['Slides', 'Charts', 'Notes', 'Themes'], stat: 'AI-powered decks', color: 'var(--pink)' },
-  { icon: '🔌', title: 'Plugin Marketplace', desc: 'Extend with 40+ industry-specific plugins. Automation packs, custom integrations, full developer SDK.', tags: ['Plugins', 'Extensions', 'SDK', 'Integrations'], stat: '40+ plugins', color: 'var(--blue)' },
-  { icon: '☁', title: 'Hybrid Cloud', desc: 'Firebase auth with cloud sync and local Python processing. Works offline for core features. Zero data lock-in.', tags: ['Firebase', 'Offline', 'Sync', 'Python'], stat: 'Hybrid architecture', color: 'var(--teal)' },
+  { icon: '⊞', title: 'Excel AI Engine', desc: 'Natural language → production-ready Excel files with formulas, pivot tables, charts, and complete financial models from a single prompt.', tags: ['VLOOKUP', 'Pivot', 'Charts', 'Macros'], stat: '200+ formula types', color: 'var(--text)' },
+  { icon: '◱', title: 'Document Intelligence', desc: 'Generate reports, proposals, contracts, and CVs. Multi-doc comparison, summarization, grammar correction, and instant PDF export.', tags: ['Reports', 'Contracts', 'Research', 'CVs'], stat: '50+ templates', color: 'var(--text)' },
+  { icon: '◈', title: 'Smart File Manager', desc: 'AI-powered file categorization using semantic embeddings. Auto-tag, cluster, deduplicate, and intelligently search your entire workspace.', tags: ['Auto-Tag', 'Search', 'Dedup', 'Cluster'], stat: 'Embedding-based', color: 'var(--text)' },
+  { icon: '⌘', title: 'Workflow Automation', desc: 'Build drag-and-drop automation workflows. Schedule recurring reports, automate email drafts, and create powerful AI-driven task pipelines.', tags: ['Schedule', 'Automate', 'Tasks', 'Pipelines'], stat: 'Drag & drop builder', color: 'var(--text)' },
+  { icon: '◎', title: 'Voice Commands', desc: 'Hands-free via Web Speech API + Whisper. Voice-to-Excel, voice document creation, and real-time text-to-speech responses.', tags: ['Whisper', 'TTS', 'Offline', 'Live'], stat: 'Real-time transcription', color: 'var(--text)' },
+  { icon: '◬', title: 'Data Visualization', desc: 'Interactive charts, financial dashboards, KPI monitors, and predictive forecasting graphs. 20+ chart types with full customization.', tags: ['Charts', 'KPI', 'Forecast', 'Dashboard'], stat: '20+ chart types', color: 'var(--text)' },
+  { icon: '◻', title: 'PowerPoint Generator', desc: 'Auto-generate pitch decks with embedded charts and speaker notes. Custom themes, AI-written slide content.', tags: ['Slides', 'Charts', 'Notes', 'Themes'], stat: 'AI-powered decks', color: 'var(--text)' },
+  { icon: '🔌', title: 'Plugin Marketplace', desc: 'Extend with 40+ industry-specific plugins. Automation packs, custom integrations, full developer SDK.', tags: ['Plugins', 'Extensions', 'SDK', 'Integrations'], stat: '40+ plugins', color: 'var(--text)' },
+  { icon: '☁', title: 'Hybrid Cloud', desc: 'Firebase auth with cloud sync and local Python processing. Works offline for core features. Zero data lock-in.', tags: ['Firebase', 'Offline', 'Sync', 'Python'], stat: 'Hybrid architecture', color: 'var(--text)' },
 ];
 
 const FAQS = [
-  { q: 'Does it work offline?', a: 'Yes. GPT-EXCEL uses a hybrid architecture. Core Excel generation, file management, and basic voice commands work fully offline using local Python. AI features require internet for LLM calls.' },
+  { q: 'Does it work offline?', a: 'Yes. XtronExcel uses a hybrid architecture. Core Excel generation, file management, and basic voice commands work fully offline using local Python. AI features require internet for LLM calls.' },
   { q: 'What AI models does it use?', a: 'Primary: OpenAI GPT-4o for generation. Azure OpenAI for enterprise. Whisper for voice transcription. Configure your own API keys in Settings for full model control.' },
   { q: 'What file formats are supported?', a: 'Excel (.xlsx, .xls, .xlsm), CSV, PDF, Word (.docx), PowerPoint (.pptx), JSON, and plain text. Export to any format from generated content in one click.' },
   { q: 'Is there a free tier?', a: '50 AI generations/month, basic Excel features, and file manager. Pro ($12/mo) unlocks unlimited generations, all voice features, advanced automation, and priority support.' },
@@ -137,13 +137,13 @@ function TerminalWidget() {
   const [blink, setBlink] = useState(true);
   const [loop, setLoop] = useState(0);
   const TERMINAL_LINES = [
-    { txt: '$ gptexcel generate --prompt "Q4 budget tracker"', col: 'rgba(255,255,255,0.35)', d: 0 },
-    { txt: '⠿ Analyzing prompt with GPT-4o...', col: 'var(--blue)', d: 600 },
-    { txt: '⠿ Generating Python + openpyxl code...', col: 'var(--blue)', d: 1300 },
-    { txt: '⠿ Executing locally on your machine...', col: 'var(--blue)', d: 2000 },
-    { txt: '⠿ Building 7 sheets, 24 formulas, 3 charts...', col: 'var(--blue)', d: 2800 },
-    { txt: '✓ budget_q4_2026.xlsx — 1.2 MB — Done', col: 'var(--green)', d: 3500 },
-    { txt: '✓ Generated in 4.8s  |  Ready to preview', col: 'var(--green)', d: 3900 },
+    { txt: '$ xtronexcel generate --prompt "Q4 budget tracker"', col: 'rgba(255,255,255,0.35)', d: 0 },
+    { txt: '⠿ Analyzing prompt with GPT-4o...', col: 'rgba(255,255,255,0.72)', d: 600 },
+    { txt: '⠿ Generating Python + openpyxl code...', col: 'rgba(255,255,255,0.72)', d: 1300 },
+    { txt: '⠿ Executing locally on your machine...', col: 'rgba(255,255,255,0.72)', d: 2000 },
+    { txt: '⠿ Building 7 sheets, 24 formulas, 3 charts...', col: 'rgba(255,255,255,0.72)', d: 2800 },
+    { txt: '✓ budget_q4_2026.xlsx — 1.2 MB — Done', col: '#ffffff', d: 3500 },
+    { txt: '✓ Generated in 4.8s  |  Ready to preview', col: '#ffffff', d: 3900 },
   ];
 
   useEffect(() => { const t = setInterval(() => setBlink(b => !b), 520); return () => clearInterval(t); }, []);
@@ -164,10 +164,10 @@ function TerminalWidget() {
         <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#2a2a2a' }}/>
         <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#2a2a2a' }}/>
         <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#2a2a2a' }}/>
-        <span style={{ marginLeft: 10, color: 'rgba(255,255,255,0.22)', fontSize: '0.68rem', letterSpacing: '0.06em' }}>gptexcel — bash</span>
+        <span style={{ marginLeft: 10, color: 'rgba(255,255,255,0.22)', fontSize: '0.68rem', letterSpacing: '0.06em' }}>xtronexcel — bash</span>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5 }}>
-          <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', animation: 'pulse-soft 2s infinite' }}/>
-          <span style={{ fontSize: '0.65rem', color: '#22c55e', letterSpacing: '0.06em' }}>LIVE</span>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#ffffff', animation: 'pulse-soft 2s infinite' }}/>
+          <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.85)', letterSpacing: '0.06em' }}>LIVE</span>
         </div>
       </div>
       <div style={{ padding: '16px 18px', minHeight: 172, display: 'flex', flexDirection: 'column', gap: 7 }}>
@@ -206,7 +206,7 @@ function FeatCard({ feat, idx, active, onClick }: { feat: typeof FEATURES[0]; id
 
 function TechBadge({ label, idx }: { label: string; idx: number }) {
   const [hov, setHov] = useState(false);
-  const cols = ['var(--blue)','var(--green)','var(--purple)','var(--orange)','var(--teal)','var(--yellow)','var(--pink)'];
+  const cols = ['var(--text)','var(--text-sec)','var(--text-muted)','var(--text)','var(--text-sec)','var(--text-muted)','var(--text)'];
   const c = cols[idx % cols.length];
   return (
     <span onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
@@ -222,7 +222,7 @@ function FaqRow({ faq, open, onToggle, idx }: { faq: typeof FAQS[0]; open: boole
     <div ref={ref} className="faq-item" style={{ opacity: inView ? 1 : 0, transform: inView ? 'none' : 'translateX(-14px)', transition: `all 0.4s ease ${idx * 0.06}s` }}>
       <div className="faq-q" onClick={onToggle}>
         <span style={{ color: 'var(--text)' }}>{faq.q}</span>
-        <span style={{ color: open ? 'var(--blue)' : 'var(--text-muted)', transition: 'transform 0.25s ease, color 0.2s', transform: open ? 'rotate(45deg)' : 'none', display: 'inline-block', fontSize: 20 }}>+</span>
+        <span style={{ color: open ? 'var(--text)' : 'var(--text-muted)', transition: 'transform 0.25s ease, color 0.2s', transform: open ? 'rotate(45deg)' : 'none', display: 'inline-block', fontSize: 20 }}>+</span>
       </div>
       <div className={`faq-a${open ? ' open' : ''}`}>{faq.a}</div>
     </div>
@@ -290,8 +290,7 @@ export default function GetStarted() {
       {/* Navbar */}
       <nav className="gs-nav" style={{ position: 'sticky', top: 0, zIndex: 50, display: 'flex', alignItems: 'center', padding: '0 28px', height: 52, background: scrolled ? 'rgba(10,10,10,0.9)' : 'var(--bg)', borderBottom: `1px solid ${scrolled ? 'var(--border)' : 'transparent'}`, transition: 'all 0.3s ease' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-          <span style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 800, letterSpacing: -0.5, color: 'var(--text)' }}>GPT</span>
-          <span style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 800, background: 'var(--blue)', color: '#fff', padding: '1px 8px', borderRadius: 4 }}>EXCEL</span>
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 800, letterSpacing: -0.5, color: 'var(--text)' }}>XtronExcel</span>
         </div>
         <div style={{ display: 'flex', gap: 2, marginLeft: 28 }}>
           {['Features', 'Pricing', 'Docs', 'About'].map(l => <span key={l} className="nav-link">{l}</span>)}
@@ -319,7 +318,7 @@ export default function GetStarted() {
         <div style={{ position: 'relative', zIndex: 3, padding: '0 24px', maxWidth: 800 }}>
           <div style={{ marginBottom: 20, animation: 'popIn 0.4s ease 0.05s both' }}>
             <span className="badge badge-outline" style={{ fontSize: '0.7rem', letterSpacing: '0.06em', padding: '4px 14px', animation: 'borderPulse 3s ease infinite' }}>
-              ● NEW — AI-Powered Excel v2.0 — Now Live
+              ● NEW — XtronExcel v2.0 — Now Live
             </span>
           </div>
 
@@ -327,23 +326,23 @@ export default function GetStarted() {
             <span className="w1" style={{ display: 'inline-block' }}>AI-Powered</span>{' '}
             <span className="w2" style={{ display: 'inline-block' }}>Spreadsheet</span>{' '}
             <br/>
-            <span className="w3" style={{ display: 'inline-block', color: 'var(--blue)' }}>Intelligence</span>{' '}
+            <span className="w3" style={{ display: 'inline-block', color: 'var(--text)' }}>Intelligence</span>{' '}
             <span className="w4" style={{ display: 'inline-block' }}>for</span>{' '}
             <span className="w5" style={{ display: 'inline-block' }}>Everyone</span>
           </h1>
 
           <p style={{ fontSize: '1.0rem', color: 'var(--text-sec)', lineHeight: 1.78, maxWidth: 540, margin: '0 auto 34px', animation: 'popIn 0.5s ease 0.5s both', opacity: 0 }}>
-            GPT-EXCEL combines LLM intelligence with Python automation to generate Excel files, documents, and data visualizations from natural language.
+            XtronExcel combines LLM intelligence with Python automation to generate Excel files, documents, and data visualizations from natural language.
           </p>
 
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', animation: 'popIn 0.5s ease 0.65s both', opacity: 0, marginBottom: 22 }}>
-            <button className="btn btn-primary btn-xl hlift" onClick={() => nav('/auth')} style={{ boxShadow: '0 0 24px rgba(59,130,246,0.28)' }}>Start for free →</button>
+            <button className="btn btn-primary btn-xl hlift" onClick={() => nav('/auth')} style={{ boxShadow: '0 0 24px rgba(255,255,255,0.12)' }}>Start for free →</button>
             <button className="btn btn-outline btn-xl hlift" onClick={() => nav('/dashboard')}>View demo</button>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 22, fontSize: '0.75rem', color: 'var(--text-muted)', animation: 'popIn 0.5s ease 0.8s both', opacity: 0 }}>
             {['No credit card', '50 free generations/mo', 'Offline capable', 'Open source'].map(t => (
-              <span key={t} style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ color: 'var(--green)' }}>✓</span>{t}</span>
+              <span key={t} style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ color: 'var(--text)' }}>✓</span>{t}</span>
             ))}
           </div>
         </div>
@@ -356,15 +355,15 @@ export default function GetStarted() {
         <div style={{ maxWidth: 940, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, alignItems: 'center' }}>
           <div>
             <div className="section-label">Under the hood</div>
-            <h2 style={{ marginBottom: 14, color: 'var(--text)' }}>Python-powered. <span style={{ color: 'var(--blue)' }}>AI-driven.</span></h2>
+            <h2 style={{ marginBottom: 14, color: 'var(--text)' }}>Python-powered. <span style={{ color: 'var(--text)' }}>AI-driven.</span></h2>
             <p style={{ marginBottom: 22, lineHeight: 1.75, fontSize: '0.875rem' }}>GPT-4o generates production-quality Python using openpyxl and pandas. Our engine validates, tests, and executes it locally no server-side processing, maximum privacy.</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
               {[
-                { icon: '◈', txt: 'Conditional formatting with color scales', c: 'var(--blue)' },
-                { icon: '◬', txt: 'Embedded bar, line, pie, scatter charts', c: 'var(--green)' },
-                { icon: '⊞', txt: 'Pivot tables with multi-level grouping', c: 'var(--purple)' },
-                { icon: '⌘', txt: 'Named ranges, data validation, dropdowns', c: 'var(--orange)' },
-                { icon: '◱', txt: 'Cross-sheet formulas with full references', c: 'var(--teal)' },
+                { icon: '◈', txt: 'Conditional formatting with color scales', c: 'var(--text)' },
+                { icon: '◬', txt: 'Embedded bar, line, pie, scatter charts', c: 'var(--text)' },
+                { icon: '⊞', txt: 'Pivot tables with multi-level grouping', c: 'var(--text)' },
+                { icon: '⌘', txt: 'Named ranges, data validation, dropdowns', c: 'var(--text)' },
+                { icon: '◱', txt: 'Cross-sheet formulas with full references', c: 'var(--text)' },
               ].map(f => (
                 <div key={f.txt} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, transition: 'all 0.18s ease', cursor: 'default' }}
                   onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = f.c; el.style.background = `${f.c}08`; el.style.transform = 'translateX(4px)'; el.style.boxShadow = `0 0 0 1px ${f.c}40`; }}
@@ -391,7 +390,7 @@ export default function GetStarted() {
             </div>
             <div style={{ display: 'flex', gap: 3 }}>
               {FEATURES.map((_, i) => (
-                <div key={i} onClick={() => setActiveFeat(i)} style={{ width: i === activeFeat ? 22 : 7, height: 7, borderRadius: 99, background: i === activeFeat ? 'var(--blue)' : 'var(--border-2)', transition: 'all 0.3s ease', cursor: 'pointer' }}/>
+                <div key={i} onClick={() => setActiveFeat(i)} style={{ width: i === activeFeat ? 22 : 7, height: 7, borderRadius: 99, background: i === activeFeat ? 'var(--text)' : 'var(--border-2)', transition: 'all 0.3s ease', cursor: 'pointer' }}/>
               ))}
             </div>
           </div>
@@ -407,11 +406,11 @@ export default function GetStarted() {
           <div className="section-label">How it works</div>
           <h2 style={{ marginBottom: 48, color: 'var(--text)' }}>Three steps to your spreadsheet</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', position: 'relative' }}>
-            <div style={{ position: 'absolute', top: 22, left: '16.5%', right: '16.5%', height: 1, background: 'linear-gradient(90deg, transparent, var(--blue-border), transparent)' }}/>
+            <div style={{ position: 'absolute', top: 22, left: '16.5%', right: '16.5%', height: 1, background: 'linear-gradient(90deg, transparent, var(--border-hi), transparent)' }}/>
             {[
-              { step: '01', title: 'Describe your need', desc: 'Write in plain English. "Monthly budget with 6 expense categories, running totals, overspend alerts, and a comparison bar chart." Specificity gives better results.', icon: '✍️', color: 'var(--blue)' },
-              { step: '02', title: 'AI generates & runs', desc: 'GPT-4o writes Python using openpyxl/pandas. Our engine validates, tests, and executes it locally — no data leaves your machine, ever.', icon: '⚙️', color: 'var(--purple)' },
-              { step: '03', title: 'Preview & download', desc: 'Live spreadsheet preview before downloading. Export as .xlsx, .csv, .pdf, or .docx. Share directly or embed in other tools.', icon: '📥', color: 'var(--green)' },
+              { step: '01', title: 'Describe your need', desc: 'Write in plain English. "Monthly budget with 6 expense categories, running totals, overspend alerts, and a comparison bar chart." Specificity gives better results.', icon: '✍️', color: 'var(--text)' },
+              { step: '02', title: 'AI generates & runs', desc: 'GPT-4o writes Python using openpyxl/pandas. Our engine validates, tests, and executes it locally — no data leaves your machine, ever.', icon: '⚙️', color: 'var(--text)' },
+              { step: '03', title: 'Preview & download', desc: 'Live spreadsheet preview before downloading. Export as .xlsx, .csv, .pdf, or .docx. Share directly or embed in other tools.', icon: '📥', color: 'var(--text)' },
             ].map((s, i) => {
               const r = useRef<HTMLDivElement>(null);
               const iv = useInView(r as any, 0.2);
@@ -436,14 +435,14 @@ export default function GetStarted() {
           <p style={{ marginBottom: 44 }}>Start free. Upgrade when you need more power.</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
             {[
-              { name: 'Free', price: '$0', desc: 'Perfect for individuals getting started', color: 'var(--green)', features: ['50 AI generations/month', 'Basic Excel generation', '1 GB file storage', '3 workflow automations', 'Community support', 'Core voice commands'], btn: 'Get started free', cls: 'btn-outline' },
-              { name: 'Pro', price: '$12', desc: 'Everything for power users & teams', color: 'var(--blue)', features: ['Unlimited AI generations', 'All Excel + Document features', '50 GB file storage', 'Unlimited workflows', 'Whisper voice commands', 'Priority support (24h)', 'Plugin marketplace', 'Custom AI model selection', 'Team collaboration'], btn: 'Start Pro trial', cls: 'btn-primary', popular: true },
+              { name: 'Free', price: '$0', desc: 'Perfect for individuals getting started', color: 'var(--text)', features: ['50 AI generations/month', 'Basic Excel generation', '1 GB file storage', '3 workflow automations', 'Community support', 'Core voice commands'], btn: 'Get started free', cls: 'btn-outline' },
+              { name: 'Pro', price: '$12', desc: 'Everything for power users & teams', color: 'var(--text)', features: ['Unlimited AI generations', 'All Excel + Document features', '50 GB file storage', 'Unlimited workflows', 'Whisper voice commands', 'Priority support (24h)', 'Plugin marketplace', 'Custom AI model selection', 'Team collaboration'], btn: 'Start Pro trial', cls: 'btn-primary', popular: true },
             ].map((p, i) => {
               const r = useRef<HTMLDivElement>(null);
               const iv = useInView(r as any, 0.2);
               return (
-                <div ref={r} key={i} style={{ background: 'var(--surface)', border: `1px solid ${p.popular ? 'var(--blue-border)' : 'var(--border)'}`, borderRadius: 14, padding: '26px', position: 'relative', textAlign: 'left', opacity: iv ? 1 : 0, transform: iv ? 'none' : 'translateY(22px)', transition: `all 0.5s ease ${i * 0.1}s`, boxShadow: p.popular ? '0 0 0 1px var(--blue-border), var(--shadow-lg)' : 'none' }}>
-                  {p.popular && <div style={{ position: 'absolute', top: -11, left: '50%', transform: 'translateX(-50%)' }}><span className="badge badge-blue" style={{ fontSize: '0.62rem', padding: '3px 10px', letterSpacing: '0.06em' }}>MOST POPULAR</span></div>}
+                <div ref={r} key={i} style={{ background: 'var(--surface)', border: `1px solid ${p.popular ? 'var(--border-hi)' : 'var(--border)'}`, borderRadius: 14, padding: '26px', position: 'relative', textAlign: 'left', opacity: iv ? 1 : 0, transform: iv ? 'none' : 'translateY(22px)', transition: `all 0.5s ease ${i * 0.1}s`, boxShadow: p.popular ? '0 0 0 1px var(--border-hi), var(--shadow-lg)' : 'none' }}>
+                  {p.popular && <div style={{ position: 'absolute', top: -11, left: '50%', transform: 'translateX(-50%)' }}><span className="badge badge-outline" style={{ fontSize: '0.62rem', padding: '3px 10px', letterSpacing: '0.06em', color: 'var(--text)', borderColor: 'var(--border-hi)' }}>MOST POPULAR</span></div>}
                   <div style={{ marginBottom: 18 }}>
                     <div style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>{p.name}</div>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 3, marginBottom: 5 }}>
@@ -474,9 +473,9 @@ export default function GetStarted() {
           <h2 style={{ marginBottom: 40, color: 'var(--text)' }}>Loved by data teams worldwide</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
             {[
-              { quote: 'GPT-EXCEL saved our finance team 12+ hours every week. What used to take half a day now takes under 2 minutes.', name: 'Sarah K.', role: 'CFO, SaaS Startup', rating: 5, color: 'var(--blue)' },
-              { quote: 'The VLOOKUP and pivot generation is insane. I just describe what I need and it works perfectly, every time.', name: 'Marcus T.', role: 'Data Analyst, Fortune 500', rating: 5, color: 'var(--green)' },
-              { quote: 'As a non-technical founder, this is magic. I can now create financial models that impress investors without knowing Python.', name: 'Priya M.', role: 'Founder, EdTech', rating: 5, color: 'var(--purple)' },
+              { quote: 'XtronExcel saved our finance team 12+ hours every week. What used to take half a day now takes under 2 minutes.', name: 'Sarah K.', role: 'CFO, SaaS Startup', rating: 5, color: 'var(--text)' },
+              { quote: 'The VLOOKUP and pivot generation is insane. I just describe what I need and it works perfectly, every time.', name: 'Marcus T.', role: 'Data Analyst, Fortune 500', rating: 5, color: 'var(--text)' },
+              { quote: 'As a non-technical founder, this is magic. I can now create financial models that impress investors without knowing Python.', name: 'Priya M.', role: 'Founder, EdTech', rating: 5, color: 'var(--text)' },
             ].map((t, i) => {
               const r = useRef<HTMLDivElement>(null);
               const iv = useInView(r as any, 0.2);
@@ -486,7 +485,7 @@ export default function GetStarted() {
                   onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'var(--border)'; el.style.boxShadow = 'none'; }}
                 >
                   <div style={{ display: 'flex', gap: 2, marginBottom: 14 }}>
-                    {Array(t.rating).fill(0).map((_, s) => <span key={s} style={{ color: 'var(--yellow)', fontSize: 14 }}>★</span>)}
+                    {Array(t.rating).fill(0).map((_, s) => <span key={s} style={{ color: 'var(--text)', fontSize: 14 }}>★</span>)}
                   </div>
                   <p style={{ fontSize: '0.84rem', lineHeight: 1.7, color: 'var(--text-sec)', marginBottom: 18, fontStyle: 'italic' }}>"{t.quote}"</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -529,7 +528,7 @@ export default function GetStarted() {
           <h2 style={{ fontSize: 'clamp(1.7rem, 4vw, 2.5rem)', marginBottom: 14, letterSpacing: -1, color: 'var(--text)' }}>Build smarter spreadsheets with AI.</h2>
           <p style={{ marginBottom: 38, color: 'var(--text-sec)', maxWidth: 440, margin: '0 auto 38px' }}>50 free generations per month. No credit card required. Start in under 60 seconds.</p>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-            <button className="btn btn-primary btn-xl hlift" onClick={() => nav('/auth')} style={{ boxShadow: '0 0 28px rgba(59,130,246,0.32)' }}>Start for free →</button>
+            <button className="btn btn-primary btn-xl hlift" onClick={() => nav('/auth')} style={{ boxShadow: '0 0 28px rgba(255,255,255,0.12)' }}>Start for free →</button>
             <button className="btn btn-outline btn-xl hlift" onClick={() => nav('/dashboard')}>Skip to dashboard</button>
           </div>
           <div style={{ marginTop: 22, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
@@ -543,8 +542,7 @@ export default function GetStarted() {
       {/* Footer */}
       <footer style={{ padding: '22px 28px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 13, color: 'var(--text)' }}>GPT</span>
-          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 13, background: 'var(--blue)', color: '#fff', padding: '0 6px', borderRadius: 3 }}>EXCEL</span>
+          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 13, color: 'var(--text)' }}>XtronExcel</span>
           <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>© 2026</span>
         </div>
         <div style={{ display: 'flex', gap: 16 }}>

@@ -1,6 +1,6 @@
 import pandas as pd
- 
- 
+
+
 def clean_data(file_path: str, output_path: str = "cleaned_data.xlsx") -> str:
     try:
         df = pd.read_excel(file_path)
@@ -9,22 +9,24 @@ def clean_data(file_path: str, output_path: str = "cleaned_data.xlsx") -> str:
  
     original_rows = len(df)
  
-    df.drop_duplicates(inplace=True)
+    df = df.drop_duplicates().copy()
     rows_after_dedup = len(df)
- 
+
     for col in df.columns:
-        if df[col].dtype in ["float64", "int64"]:
-            df[col].fillna(df[col].median(), inplace=True)
+        if pd.api.types.is_numeric_dtype(df[col]):
+            df[col] = df[col].fillna(df[col].median())
+        elif pd.api.types.is_datetime64_any_dtype(df[col]):
+            df[col] = df[col].ffill().bfill()
         else:
-            df[col].fillna("Unknown", inplace=True)
- 
+            df[col] = df[col].fillna("Unknown")
+
     df.columns = [col.strip().lower().replace(" ", "_") for col in df.columns]
- 
+
     try:
         df.to_excel(output_path, index=False)
     except Exception as e:
         return f"Could not save cleaned file: {str(e)}"
- 
+
     removed_rows = original_rows - rows_after_dedup
     return (
         f"Data cleaned successfully. "

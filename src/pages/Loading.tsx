@@ -160,20 +160,7 @@ export default function Loading() {
         <div style={{ textAlign: 'center' }}>
           <div className="loading-glitch" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
             <span style={{ fontFamily: 'var(--font-display)', fontSize: 48, fontWeight: 800, letterSpacing: -2, color: 'var(--text)' }}>
-              GPT
-            </span>
-            <span
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 48,
-                fontWeight: 800,
-                letterSpacing: -2,
-                background: 'var(--accent)',
-                color: 'var(--bg)',
-                padding: '2px 12px',
-              }}
-            >
-              EXCEL
+              XtronExcel
             </span>
           </div>
           <div

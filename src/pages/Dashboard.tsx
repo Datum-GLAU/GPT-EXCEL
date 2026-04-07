@@ -542,7 +542,7 @@ export default function Dashboard() {
             </div>
           )}
         </main>
-        <AIChatPanel />
+        <AIChatPanel initialCollapsed />
       </div>
     </div>
   )

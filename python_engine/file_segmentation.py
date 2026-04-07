@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import numpy as np
+from utils import safe_slug
 
 
 def segment_by_column(file_path: str, column: str,
@@ -25,7 +26,7 @@ def segment_by_column(file_path: str, column: str,
 
     for val in unique_values:
         segment_df = df[df[column] == val].reset_index(drop=True)
-        safe_name = str(val).replace("/", "-").replace("\\", "-").replace(" ", "_")
+        safe_name = safe_slug(str(val), "segment")
         out_path = os.path.join(output_dir, f"{safe_name}.xlsx")
         segment_df.to_excel(out_path, index=False)
         created_files.append({
@@ -108,7 +109,7 @@ def segment_by_date_column(file_path: str, date_column: str,
 
     for period, group in df.groupby("_period"):
         segment_df = group.drop(columns=["_period"]).reset_index(drop=True)
-        safe_name = str(period).replace("/", "-")
+        safe_name = safe_slug(str(period), "period")
         out_path = os.path.join(output_dir, f"{safe_name}.xlsx")
         segment_df.to_excel(out_path, index=False)
         created_files.append({
@@ -165,6 +166,18 @@ def get_file_info(file_path: str) -> dict:
     numeric_df = df.select_dtypes(include=[np.number])
     file_size_kb = round(os.path.getsize(file_path) / 1024, 2) if os.path.exists(file_path) else 0
 
+    numeric_summary = {}
+    for col in numeric_df.columns:
+        values = df[col].dropna()
+        if values.empty:
+            continue
+        numeric_summary[col] = {
+            "mean": round(float(np.mean(values)), 2),
+            "std": round(float(np.std(values)), 2),
+            "min": round(float(np.min(values)), 2),
+            "max": round(float(np.max(values)), 2),
+        }
+
     return {
         "file_path": file_path,
         "file_size_kb": file_size_kb,
@@ -172,13 +185,5 @@ def get_file_info(file_path: str) -> dict:
         "total_columns": len(df.columns),
         "columns": list(df.columns),
         "numeric_columns": list(numeric_df.columns),
-        "numeric_summary": {
-            col: {
-                "mean":   round(float(np.mean(df[col].dropna())), 2),
-                "std":    round(float(np.std(df[col].dropna())), 2),
-                "min":    round(float(np.min(df[col].dropna())), 2),
-                "max":    round(float(np.max(df[col].dropna())), 2),
-            }
-            for col in numeric_df.columns
-        },
+        "numeric_summary": numeric_summary,
     }

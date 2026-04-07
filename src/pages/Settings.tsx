@@ -133,7 +133,7 @@ export default function Settings() {
 
             <Section title="About">
               <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
-                <strong style={{ color: 'var(--text)' }}>GPT-EXCEL v2.0</strong> — University Data Management Platform<br />
+                <strong style={{ color: 'var(--text)' }}>XtronExcel v2.0</strong> — University Data Management Platform<br />
                 Built with Electron, React, TypeScript, Express.js, XLSX<br />
                 Designed for GLA University — Datum_GLAU<br />
                 <span style={{ color: 'var(--text-muted)' }}>© 2026 Mallavarapu Krishna Koushik Reddy et al.</span>
