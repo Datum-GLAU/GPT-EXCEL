@@ -1,8 +1,29 @@
+# GPT Excel — Python Engine
+# Install: pip install -r requirements.txt
+
+# Web framework
 fastapi
-uvicorn
+uvicorn[standard]
+python-multipart
+
+# Data processing
 pandas
+numpy
 openpyxl
 xlsxwriter
+
+# Visualization
 matplotlib
+plotly
+
+# Document generation
+python-docx
+python-pptx
+
+# Scheduling
 schedule
-python-multipart
+
+# ML (optional - for file categorization)
+scikit-learn
+
+# SQLite is built into Python — no install needed
