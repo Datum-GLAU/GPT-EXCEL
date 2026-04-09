@@ -63,6 +63,7 @@ interface PythonOutput {
 }
 
 type WorkMode = 'online' | 'offline'
+const EXCEL_VIEW_STATE_KEY = 'excel_view_state'
 
 interface OfflineCommand {
   command: string
@@ -188,7 +189,14 @@ function FileBadge({ file }: { file: any }) {
 export default function ExcelSheet() {
   const user = useSelector((s: RootState) => s.app.user)
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [activeTab, setActiveTab] = useState<MainTab>('files')
+  const [activeTab, setActiveTab] = useState<MainTab>(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(EXCEL_VIEW_STATE_KEY) || '{}')
+      return (saved.activeTab as MainTab) || 'files'
+    } catch {
+      return 'files'
+    }
+  })
   const [networkAvailable, setNetworkAvailable] = useState<boolean>(() => typeof navigator === 'undefined' ? true : navigator.onLine)
   const [backendOnline, setBackendOnline] = useState(false)
   const [pythonOnline, setPythonOnline] = useState(false)
@@ -333,12 +341,25 @@ export default function ExcelSheet() {
 
   useEffect(() => {
     const pendingId = localStorage.getItem('excel_autoload_file_id')
-    if (!pendingId || !files.length || currentFile?.id === pendingId) return
-    const target = files.find(file => file.id === pendingId)
+    const savedState = (() => {
+      try { return JSON.parse(localStorage.getItem(EXCEL_VIEW_STATE_KEY) || '{}') } catch { return {} }
+    })()
+    const restoreId = pendingId || savedState.currentFileId
+    if (!restoreId || !files.length || currentFile?.id === restoreId) return
+    const target = files.find(file => file.id === restoreId)
     if (!target) return
-    localStorage.removeItem('excel_autoload_file_id')
+    if (pendingId) localStorage.removeItem('excel_autoload_file_id')
     openFile(target)
   }, [files, currentFile])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(EXCEL_VIEW_STATE_KEY, JSON.stringify({
+        activeTab,
+        currentFileId: currentFile?.id || null
+      }))
+    } catch {}
+  }, [activeTab, currentFile?.id])
 
   const loadFiles = async () => {
     setFilesLoading(true)
@@ -376,6 +397,10 @@ export default function ExcelSheet() {
       await loadFiles()
       if (currentFile?.id === id) { 
         setCurrentFile(null); setGrid([]); setStats(null) 
+        try {
+          const saved = JSON.parse(localStorage.getItem(EXCEL_VIEW_STATE_KEY) || '{}')
+          localStorage.setItem(EXCEL_VIEW_STATE_KEY, JSON.stringify({ ...saved, currentFileId: null }))
+        } catch {}
       }
       showToast('File deleted')
     } catch { 
@@ -402,11 +427,11 @@ export default function ExcelSheet() {
     setAiStatus({ tone: 'ready', text: `Opened ${file.name} from AI chat. You can edit cells, save the workbook, or ask for more changes.` })
     showToast(`Opened ${file.name}`)
     try {
-      await openFile(file)
+      await openFile(file, { preserveActiveTab: true })
     } catch {}
   }
 
-  const openFile = async (file: any) => {
+  const openFile = async (file: any, options?: { preserveActiveTab?: boolean }) => {
     setSheetLoading(true)
     try {
       const res = await api.analyzeFile(file.id)
@@ -429,7 +454,15 @@ export default function ExcelSheet() {
       }
       
       setActiveSheetIdx(0)
-      setActiveTab('sheet')
+      if (!options?.preserveActiveTab) setActiveTab('sheet')
+      try {
+        const saved = JSON.parse(localStorage.getItem(EXCEL_VIEW_STATE_KEY) || '{}')
+        localStorage.setItem(EXCEL_VIEW_STATE_KEY, JSON.stringify({
+          ...saved,
+          currentFileId: file.id,
+          activeTab: options?.preserveActiveTab ? saved.activeTab || activeTab : 'sheet'
+        }))
+      } catch {}
       showToast(`Opened ${file.name}`)
     } catch (e: any) { 
       console.error('Open file error:', e)

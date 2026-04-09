@@ -4,7 +4,7 @@ import { RootState } from '../index'
 
 interface Msg {
   id: string
-  role: 'user' | 'ai' | 'system'
+  role: 'user' | 'ai'
   content: string
   rows?: any[][]
   isStreaming?: boolean
@@ -28,12 +28,6 @@ interface Props {
 }
 
 const BASE = 'http://localhost:3001/api/llm'
-
-const QUICK = [
-  'top 10 students', 'show failed', 'section stats',
-  'below 75% attendance', 'subject averages', 'grade distribution',
-  'sort by average', 'show passed', 'explain this data', 'who is at risk'
-]
 
 let _uid = 0
 const uid = () => `${++_uid}_${Date.now()}`
@@ -226,6 +220,7 @@ const MD = ({ text }: { text: string }) => {
     .replace(/^### (.+)$/gm, '<div style="font-weight:700;font-size:0.82rem;margin:8px 0 3px">$1</div>')
     .replace(/^## (.+)$/gm, '<div style="font-weight:700;font-size:0.86rem;margin:10px 0 4px">$1</div>')
     .replace(/^[-•] (.+)$/gm, '<div style="display:flex;gap:5px;margin:2px 0"><span style="color:var(--accent)">•</span><span>$1</span></div>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer" style="color:var(--blue);text-decoration:underline">$1</a>')
     .replace(/`([^`]+)`/g, '<code style="background:var(--surface-2);padding:1px 4px;border-radius:3px;font-size:0.78em;color:var(--green)">$1</code>')
     .replace(/\n\n/g, '<br/><br/>').replace(/\n/g, '<br/>')
   return <div dangerouslySetInnerHTML={{ __html: html }} />
@@ -291,7 +286,6 @@ const ChatComposer = memo(function ChatComposer({
           <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={value.trim() && !busy ? '#fff' : 'var(--text-muted)'} strokeWidth={2.5}><line x1={22} y1={2} x2={11} y2={13}/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
       </div>
-      <div style={{ fontSize: '0.58rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: 4 }}>â†µ send Â· â‡§â†µ newline</div>
     </div>
   )
 })
@@ -312,18 +306,10 @@ export default function AIChatPanel({
   onUndoLastChange
 }: Props) {
   const user = useSelector((s: RootState) => s.app.user)
-  const offlineMode = false
+  const chatStorageKey = `ai_chat_history_${currentFile?.id || 'global'}`
+  const [tab, setTab] = useState<'chat'>('chat')
   const [collapsed, setCollapsed] = useState(initialCollapsed)
-  const [tab, setTab] = useState<'chat' | 'settings'>('chat')
-
-  const [msgs, setMsgs] = useState<Msg[]>([{
-    id: 'offline_mode_notice',
-    role: 'ai',
-    time: now(),
-    content: `Hi ${user?.name?.split(' ')[0] || 'there'}! I'm your assistant.\n\nAI mode is active. Ask for edits, summaries, formulas, or new workbook ideas.`
-  }])
-  const [inputDisplay, setInputDisplay] = useState('')
-  const inputRef = useRef<HTMLTextAreaElement>(null)
+  const [msgs, setMsgs] = useState<Msg[]>([])
   const [busy, setBusy] = useState(false)
   const msgsEndRef = useRef<HTMLDivElement>(null)
 
@@ -333,52 +319,83 @@ export default function AIChatPanel({
   const [sheetBusy, setSheetBusy] = useState(false)
   const [pendingDocRequest, setPendingDocRequest] = useState<{ text: string; contextPayload: any } | null>(null)
 
-  const [geminiKey, setGeminiKey] = useState(() => localStorage.getItem('gemini_key') || '')
-  const [hfKey, setHfKey] = useState(() => localStorage.getItem('hf_key') || '')
+  const [provider, setProvider] = useState<'gemini' | 'claude'>('gemini')
+  const [geminiKey, setGeminiKey] = useState('')
+  const [anthropicKey, setAnthropicKey] = useState('')
   const [geminiInput, setGeminiInput] = useState('')
-  const [hfInput, setHfInput] = useState('')
-  const [showGemini, setShowGemini] = useState(false)
-  const [showHF, setShowHF] = useState(false)
-  const [keyStatus, setKeyStatus] = useState({ gemini: !!localStorage.getItem('gemini_key'), hf: !!localStorage.getItem('hf_key') })
+  const [anthropicInput, setAnthropicInput] = useState('')
   const [saving, setSaving] = useState(false)
+  const [keyStatus, setKeyStatus] = useState({
+    provider: 'gemini' as 'gemini' | 'claude',
+    gemini: false,
+    anthropic: false,
+    hf: false
+  })
   const chatBodyRef = useRef<HTMLDivElement>(null)
   const chatScrollTopRef = useRef(0)
   const shouldStickToBottomRef = useRef(true)
 
   useEffect(() => {
-    if (tab !== 'chat') return
     if (shouldStickToBottomRef.current) {
       msgsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
       return
     }
     if (chatBodyRef.current) chatBodyRef.current.scrollTop = chatScrollTopRef.current
-  }, [msgs.length, msgs[msgs.length - 1]?.content?.length, tab])
+  }, [msgs.length, msgs[msgs.length - 1]?.content?.length])
 
-  useEffect(() => {
-    if (tab === 'chat' && chatBodyRef.current) {
-      chatBodyRef.current.scrollTop = chatScrollTopRef.current
-    }
-  }, [tab])
-
-  useEffect(() => {
-    const baseGreeting = `Hi ${user?.name?.split(' ')[0] || 'there'}! I'm your assistant.\n\nAI mode is active. Ask for edits, summaries, formulas, or new workbook ideas.`
-
-    setMsgs(prev => {
-      const rest = prev.filter(msg => msg.id !== 'offline_mode_notice' && !/I'm your AI Excel assistant|Open a file and ask me anything/i.test(msg.content))
-      return [{ id: 'offline_mode_notice', role: 'ai', time: now(), content: baseGreeting }, ...rest]
-    })
-  }, [user?.name])
-
-  useEffect(() => {
-    const g = localStorage.getItem('gemini_key')
-    const h = localStorage.getItem('hf_key')
-    if (g || h) {
-      fetch('http://localhost:3001/api/llm/save-keys', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ geminiKey: g || '', hfKey: h || '' })
-      }).catch(() => {})
-    }
+  const refreshKeyStatus = useCallback(async () => {
+    try {
+      const res = await fetch('http://localhost:3001/api/llm/status')
+      const result = await res.json()
+      if (!res.ok) throw new Error(result.error || 'Status fetch failed')
+      const nextProvider = result.provider === 'claude' ? 'claude' : 'gemini'
+      setKeyStatus({
+        provider: nextProvider,
+        gemini: !!result.gemini,
+        anthropic: !!result.anthropic,
+        hf: !!result.anthropic
+      })
+    } catch {}
   }, [])
+
+  useEffect(() => {
+    refreshKeyStatus()
+  }, [refreshKeyStatus])
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(chatStorageKey) || '[]')
+      setMsgs(Array.isArray(saved)
+        ? saved.map((msg: any) => ({
+            id: String(msg.id || uid()),
+            role: msg.role === 'user' ? 'user' : 'ai',
+            content: String(msg.content || ''),
+            rows: Array.isArray(msg.rows) ? msg.rows : undefined,
+            time: String(msg.time || now()),
+            isStreaming: false
+          }))
+        : [])
+    } catch {
+      setMsgs([])
+    }
+  }, [chatStorageKey])
+
+  useEffect(() => {
+    try {
+      const persistable = msgs
+        .filter(msg => !msg.isStreaming)
+        .map(msg => ({
+          id: msg.id,
+          role: msg.role,
+          content: msg.content,
+          rows: msg.rows,
+          time: msg.time
+        }))
+      localStorage.setItem(chatStorageKey, JSON.stringify(persistable))
+    } catch {}
+  }, [chatStorageKey, msgs])
+
+  const anyKeySet = keyStatus.gemini || keyStatus.anthropic
 
   const addMsg = useCallback((role: Msg['role'], content: string, rows?: any[][]): string => {
     const id = uid()
@@ -389,6 +406,26 @@ export default function AIChatPanel({
   const updateMsg = useCallback((id: string, content: string, done = false) => {
     setMsgs(prev => prev.map(m => m.id === id ? { ...m, content, isStreaming: !done } : m))
   }, [])
+
+  const startTimedAiStatus = useCallback((label: string) => {
+    const id = uid()
+    const startedAt = Date.now()
+    setMsgs(prev => [...prev, { id, role: 'ai', content: `${label}... 0s`, isStreaming: true, time: now() }])
+    const timer = window.setInterval(() => {
+      const seconds = Math.max(1, Math.floor((Date.now() - startedAt) / 1000))
+      updateMsg(id, `${label}... ${seconds}s`, false)
+    }, 1000)
+    return {
+      id,
+      stop(finalContent?: string) {
+        window.clearInterval(timer)
+        if (finalContent) updateMsg(id, finalContent, true)
+        else {
+          setMsgs(prev => prev.filter(msg => msg.id !== id))
+        }
+      }
+    }
+  }, [updateMsg])
 
   const generateDocumentFromPrompt = useCallback(async (
     requestText: string,
@@ -445,23 +482,54 @@ export default function AIChatPanel({
     addMsg('ai', `Created **${doc.title}** as a ${requestedLength} document. The preview is ready in Analysis.`)
   }, [addMsg, onDocumentResult, user?.department, user?.name])
 
+  const persistAiSettings = useCallback(async (nextProvider: 'gemini' | 'claude', nextGemini: string, nextAnthropic: string) => {
+    const res = await fetch('http://localhost:3001/api/llm/save-keys', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider: nextProvider, geminiKey: nextGemini, anthropicKey: nextAnthropic })
+    })
+    const result = await res.json()
+    if (!res.ok) throw new Error(result.error || 'Failed to save AI settings')
+    return result
+  }, [])
+
   const saveKeys = async () => {
     setSaving(true)
     const newGemini = geminiInput.trim() || geminiKey
-    const newHF = hfInput.trim() || hfKey
+    const nextProvider = provider
+    const newAnthropic = anthropicInput.trim() || anthropicKey
     try {
-      await fetch('http://localhost:3001/api/llm/save-keys', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ geminiKey: newGemini, hfKey: newHF })
-      })
+      await persistAiSettings(nextProvider, newGemini, newAnthropic)
+      localStorage.setItem('ai_provider', nextProvider)
       if (geminiInput.trim()) { setGeminiKey(newGemini); localStorage.setItem('gemini_key', newGemini); setGeminiInput('') }
-      if (hfInput.trim()) { setHfKey(newHF); localStorage.setItem('hf_key', newHF); setHfInput('') }
-      setKeyStatus({ gemini: !!newGemini, hf: !!newHF })
-      addMsg('system', `✓ Keys saved. ${newGemini ? 'Gemini (primary)' : ''}${newHF ? ' + HuggingFace (fallback)' : ''} active.`)
+      if (anthropicInput.trim()) { setAnthropicKey(newAnthropic); localStorage.setItem('anthropic_key', newAnthropic); setAnthropicInput('') }
+      setKeyStatus({ provider: nextProvider, gemini: !!newGemini, anthropic: !!newAnthropic, hf: !!newAnthropic })
+      addMsg('ai', `AI settings saved. ${nextProvider === 'claude' ? 'Claude' : 'Gemini'} is selected.`)
       setTab('chat')
-    } catch { addMsg('system', '✗ Failed to save keys') }
+    } catch { addMsg('ai', 'Failed to save keys.') }
     setSaving(false)
   }
+
+  const removeSavedKey = useCallback(async (key: 'gemini' | 'anthropic') => {
+    try {
+      const nextGemini = key === 'gemini' ? '' : geminiKey
+      const nextAnthropic = key === 'anthropic' ? '' : anthropicKey
+      await persistAiSettings(provider, nextGemini, nextAnthropic)
+      if (key === 'gemini') {
+        setGeminiKey('')
+        setGeminiInput('')
+        localStorage.removeItem('gemini_key')
+      } else {
+        setAnthropicKey('')
+        setAnthropicInput('')
+        localStorage.removeItem('anthropic_key')
+      }
+      setKeyStatus({ provider, gemini: !!nextGemini, anthropic: !!nextAnthropic, hf: !!nextAnthropic })
+      addMsg('ai', `${key === 'gemini' ? 'Gemini' : 'Claude'} key removed.`)
+    } catch {
+      addMsg('ai', 'Failed to remove key.')
+    }
+  }, [addMsg, anthropicKey, geminiKey, persistAiSettings, provider])
 
   const exportRows = async (rows: any[][]) => {
     if (!rows?.length) return
@@ -474,18 +542,22 @@ export default function AIChatPanel({
       })
       const j = await res.json()
       window.open(`http://localhost:3001${j.file.url}`, '_blank')
-    } catch { addMsg('system', '✗ Export failed') }
+    } catch { addMsg('ai', 'Export failed.') }
   }
 
   const streamChat = useCallback(async (text: string) => {
     const aiId = uid()
     setMsgs(prev => [...prev, { id: aiId, role: 'ai', content: '', isStreaming: true, time: now() }])
+    if (!anyKeySet) {
+      updateMsg(aiId, 'AI is not ready. Add `GEMINI_API_KEY` or `ANTHROPIC_API_KEY` in `Ai_Agent/.env`, then restart the backend.', true)
+      return
+    }
     try {
       const res = await fetch(`${BASE}/stream`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text, rawRows, stats })
       })
-      if (!res.ok || !res.body) { updateMsg(aiId, `⚠ Stream failed`, true); return }
+      if (!res.ok || !res.body) { updateMsg(aiId, 'AI could not send a reply right now. Please try again.', true); return }
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
       let full = '', buf = ''
@@ -498,15 +570,15 @@ export default function AIChatPanel({
           if (!line.startsWith('data: ')) continue
           try {
             const d = JSON.parse(line.slice(6))
-            if (d.error) { updateMsg(aiId, `⚠ ${d.error}`, true); return }
+            if (d.error) { updateMsg(aiId, `AI error: ${d.error}`, true); return }
             if (d.text) { full += d.text; updateMsg(aiId, full, false) }
-            if (d.done) updateMsg(aiId, full, true)
+            if (d.done) updateMsg(aiId, full || 'AI could not send a reply. Please try again.', true)
           } catch {}
         }
       }
-      if (full) updateMsg(aiId, full, true)
-    } catch (e: any) { updateMsg(aiId, `⚠ ${e.message}`, true) }
-  }, [rawRows, stats, updateMsg])
+      updateMsg(aiId, full || 'AI could not send a reply. Please try again.', true)
+    } catch (e: any) { updateMsg(aiId, `AI error: ${e.message}`, true) }
+  }, [anyKeySet, rawRows, stats, updateMsg])
 
   const send = useCallback(async (msg?: string) => {
     const text = (msg || '').trim()
@@ -530,7 +602,7 @@ export default function AIChatPanel({
       try {
         await generateDocumentFromPrompt(pendingDocRequest.text, pendingDocRequest.contextPayload, requestedLength)
       } catch (e: any) {
-        addMsg('system', `Document request failed: ${e.message}`)
+        addMsg('ai', `Document request failed: ${e.message}`)
       }
       setPendingDocRequest(null)
       setBusy(false)
@@ -539,36 +611,19 @@ export default function AIChatPanel({
     const lowerText = text.toLowerCase()
     if (/\b(apply|confirm)\b.*\b(preview|changes?)\b/i.test(text) && onApplyPreview) {
       onApplyPreview()
-      addMsg('system', 'Applied the current preview to the sheet.')
+      addMsg('ai', 'Applied the current preview to the sheet.')
       setBusy(false)
       return
     }
     if (/\b(discard|cancel)\b.*\b(preview|changes?)\b/i.test(text) && onDiscardPreview) {
       onDiscardPreview()
-      addMsg('system', 'Discarded the current preview.')
+      addMsg('ai', 'Discarded the current preview.')
       setBusy(false)
       return
     }
     if (/\bundo\b.*\b(change|preview|last)\b/i.test(text) && onUndoLastChange) {
       onUndoLastChange()
-      addMsg('system', 'Undid the last AI-applied change.')
-      setBusy(false)
-      return
-    }
-    const localLookup = applyLocalLookupCommand(text, rawRows)
-    if (localLookup) {
-      addMsg('ai', localLookup.message, localLookup.rows)
-      setBusy(false)
-      return
-    }
-    const localSheetCommand = applyLocalSheetCommand(text, rawRows)
-    if (localSheetCommand) {
-      if ('error' in localSheetCommand) addMsg('system', localSheetCommand.error)
-      else if (onGridUpdate) {
-        const msgId = addMsg('ai', localSheetCommand.message, localSheetCommand.rows)
-        setMsgs(prev => prev.map(m => m.id === msgId ? { ...m, rows: localSheetCommand.rows } : m))
-        onGridUpdate(localSheetCommand.rows, localSheetCommand.message)
-      }
+      addMsg('ai', 'Undid the last AI-applied change.')
       setBusy(false)
       return
     }
@@ -579,21 +634,27 @@ export default function AIChatPanel({
       user: { name: user?.name, department: user?.department }
     }
     if (/\b(create|generate|make)\b.*\b(doc|document|report|notice|proposal)\b/i.test(text)) {
+      let progress: ReturnType<typeof startTimedAiStatus> | null = null
       try {
         if (!requestedLength) {
           setPendingDocRequest({ text, contextPayload })
           addMsg('ai', 'What size should the document be: `short`, `medium`, or `long`?')
         } else {
+          progress = startTimedAiStatus('Creating document')
           await generateDocumentFromPrompt(text, contextPayload, requestedLength)
+          progress.stop()
         }
       } catch (e: any) {
-        addMsg('system', `Document request failed: ${e.message}`)
+        progress?.stop()
+        addMsg('ai', `Document request failed: ${e.message}`)
       }
       setBusy(false)
       return
     }
     if ((/\b(formula|excel formula|spreadsheet formula|function)\b/i.test(text) || /\b(sumif|sumifs|countif|countifs|averageif|averageifs|vlookup|xlookup|index match|iferror)\b/i.test(text)) && rawRows?.[0]?.length) {
+      let progress: ReturnType<typeof startTimedAiStatus> | null = null
       try {
+        progress = startTimedAiStatus('Creating formula')
         const headers = rawRows[0].map((h: any) => String(h))
         const res = await fetch(`${BASE}/formula`, {
           method: 'POST',
@@ -607,15 +668,19 @@ export default function AIChatPanel({
           result.explanation ? `**Explanation**\n${result.explanation}` : '',
           result.example ? `**Example**\n${result.example}` : ''
         ].filter(Boolean)
+        progress.stop()
         addMsg('ai', parts.join('\n\n') || 'I generated a formula suggestion.')
       } catch (e: any) {
-        addMsg('system', `âœ— ${e.message}`)
+        progress?.stop()
+        addMsg('ai', `Formula request failed: ${e.message}`)
       }
       setBusy(false)
       return
     }
     if (/\b(create|generate|make)\b.*\b(sheet|table|excel|spreadsheet)\b/i.test(text)) {
+      let progress: ReturnType<typeof startTimedAiStatus> | null = null
       try {
+        progress = startTimedAiStatus(rawRows?.length ? 'Creating new sheet from current workbook' : 'Creating workbook')
         const endpoint = rawRows?.length ? `${BASE}/new-sheet` : `${BASE}/generate-excel`
         const payload = rawRows?.length
           ? { instruction: text, rawRows, stats, department: user?.department }
@@ -627,6 +692,7 @@ export default function AIChatPanel({
         })
         const result = await res.json()
         if (!res.ok) throw new Error(result.error || 'Spreadsheet generation failed')
+        progress.stop()
         if (onNewFile && result.file) onNewFile(result.file, result.rows)
         onAnalysisResult?.({
           kind: 'file',
@@ -637,9 +703,12 @@ export default function AIChatPanel({
           createdAt: new Date().toISOString()
         })
         const rowCount = result.rowCount ? ` (${result.rowCount} rows)` : ''
-        addMsg('ai', `Created **${asText(result.sheet_name || result.file?.name || 'New sheet')}**${rowCount} from your chat request. Check the Analysis tab for the preview.`)
+        const openUrl = result.file?.url ? `http://localhost:3001${result.file.url}` : ''
+        const openLine = openUrl ? `\n\n[Open workbook](${openUrl})` : ''
+        addMsg('ai', `Created **${asText(result.sheet_name || result.file?.name || 'New sheet')}**${rowCount} from your chat request.${result.fallback ? '\n\nBuilt from the current sheet using local fallback because the AI quota is exhausted.' : ''}${openLine}`, result.rows)
       } catch (e: any) {
-        addMsg('system', `Spreadsheet request failed: ${e.message}`)
+        progress?.stop()
+        addMsg('ai', `Spreadsheet request failed: ${e.message}`)
       }
       setBusy(false)
       return
@@ -653,7 +722,9 @@ export default function AIChatPanel({
         lowerText.includes('score') || lowerText.includes('distribution') ? 'score' :
         'section'
       if (onShowChart) {
+        const progress = startTimedAiStatus('Preparing chart')
         onShowChart({ chartType, chartDataKey, title: `AI chart: ${text}` })
+        progress.stop()
         addMsg('ai', `Prepared a ${chartType} chart preview for ${chartDataKey} data. Review it in the sheet area, then apply or discard it.`)
       } else {
         addMsg('ai', 'Chart view is not connected yet.')
@@ -695,17 +766,13 @@ export default function AIChatPanel({
           })
           if (result.action === 'add_column' && onGridUpdate) {
             onGridUpdate(result.rows, asText(result.description || 'Column added'))
-            addMsg('system', `✓ Preview ready — column "${result.column_name}" can be reviewed before applying`)
+            addMsg('ai', `Preview ready. Column "${result.column_name}" can be reviewed before applying.`)
           }
         } else { await streamChat(text) }
       } catch { await streamChat(text) }
     } else { await streamChat(text) }
     setBusy(false)
   }, [busy, pendingDocRequest, rawRows, stats, onGridUpdate, onNewFile, onShowChart, onAnalysisResult, onApplyPreview, onDiscardPreview, onUndoLastChange, addMsg, streamChat, currentFile?.name, user?.department, user?.name, generateDocumentFromPrompt])
-
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(inputDisplay) }
-  }, [send, inputDisplay])
 
   const generateExcel = async () => {
     if (!genPrompt.trim()) return
@@ -721,7 +788,7 @@ export default function AIChatPanel({
       setGenPrompt(''); setTab('chat')
       const msgId = addMsg('ai', `✓ **Created "${result.sheet_name}"** — ${result.rowCount} rows\n\n${result.description}\n\nThe workbook is now linked back to Excel Sheet so you can open, edit, and save it.`)
       if (result.rows?.length > 1) setMsgs(prev => prev.map(m => m.id === msgId ? { ...m, rows: result.rows } : m))
-    } catch (e: any) { addMsg('system', `✗ ${e.message}`); setTab('chat') }
+    } catch (e: any) { addMsg('ai', `Request failed: ${e.message}`); setTab('chat') }
     setGenBusy(false)
   }
 
@@ -739,11 +806,10 @@ export default function AIChatPanel({
       setSheetPrompt(''); setTab('chat')
       const msgId = addMsg('ai', `✓ **"${result.sheet_name}"** — ${result.rowCount} rows\n\n${result.description}\n\nIt has been sent back to Excel Sheet so you can review and keep editing manually.`)
       if (result.rows?.length > 1) setMsgs(prev => prev.map(m => m.id === msgId ? { ...m, rows: result.rows } : m))
-    } catch (e: any) { addMsg('system', `✗ ${e.message}`); setTab('chat') }
+    } catch (e: any) { addMsg('ai', `Request failed: ${e.message}`); setTab('chat') }
     setSheetBusy(false)
   }
 
-  const anyKeySet = keyStatus.gemini || keyStatus.hf
   const hasHiddenStreamingAi = msgs.some(m => m.role === 'ai' && m.isStreaming && !m.content.trim())
   const hasVisibleStreamingAi = msgs.some(m => m.role === 'ai' && m.isStreaming && !!m.content.trim())
 
@@ -766,38 +832,18 @@ export default function AIChatPanel({
           <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text)' }}>Xtron</div>
           <div style={{ fontSize: '0.6rem', display: 'flex', alignItems: 'center', gap: 3, color: anyKeySet ? 'var(--green)' : 'var(--orange)' }}>
             <div style={{ width: 4, height: 4, borderRadius: '50%', background: anyKeySet ? 'var(--green)' : 'var(--orange)', flexShrink: 0 }} />
-            {anyKeySet ? `${keyStatus.gemini ? 'Gemini' : ''}${keyStatus.gemini && keyStatus.hf ? ' + ' : ''}${keyStatus.hf ? 'HuggingFace' : ''} · Ready` : 'AI mode · Add API key in Settings'}
+            {anyKeySet ? `${keyStatus.provider === 'claude' ? 'Claude' : 'Gemini'} · Ready` : 'AI mode · Configure Ai_Agent/.env'}
           </div>
         </div>
         {currentFile && <div style={{ fontSize: '0.58rem', color: 'var(--text-muted)', maxWidth: 60, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📄 {currentFile.name}</div>}
         <button onClick={() => setCollapsed(true)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: '0 2px', flexShrink: 0 }}>›</button>
       </div>
 
-      <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
-        {([['chat','Chat'], ['settings','⚙']] as Array<[string, string]>).map(([id, label]) => (
-          <button key={id} onClick={() => setTab(id as any)}
-            style={{ flex: 1, padding: '6px 0', background: 'none', border: 'none', borderBottom: tab === id ? '2px solid var(--blue)' : '2px solid transparent', cursor: 'pointer', fontSize: '0.7rem', fontWeight: tab === id ? 600 : 400, color: tab === id ? 'var(--text)' : 'var(--text-muted)' }}>
-            {label}
-          </button>
-        ))}
-      </div>
-
       {tab === 'chat' && (
         <>
           {!anyKeySet && (
-            <div style={{ padding: '8px 10px', background: 'rgba(234,179,8,0.08)', borderBottom: '1px solid rgba(234,179,8,0.2)', fontSize: '0.65rem', color: 'var(--orange)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>⚠ No API key set</span>
-              <button onClick={() => setTab('settings')} style={{ background: 'none', border: '1px solid var(--orange)', borderRadius: 4, padding: '2px 8px', fontSize: '0.62rem', color: 'var(--orange)', cursor: 'pointer' }}>Add Key</button>
-            </div>
-          )}
-          {rawRows && rawRows.length > 1 && (
-            <div style={{ display: 'flex', gap: 4, padding: '6px 8px', borderBottom: '1px solid var(--border)', overflowX: 'auto', flexShrink: 0 }}>
-              {QUICK.map(q => (
-                <button key={q} onClick={() => !busy && send(q)} disabled={busy}
-                  style={{ padding: '3px 8px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, fontSize: '0.6rem', color: 'var(--text-secondary)', cursor: busy ? 'default' : 'pointer', whiteSpace: 'nowrap', flexShrink: 0, opacity: busy ? 0.5 : 1 }}>
-                  {q}
-                </button>
-              ))}
+            <div style={{ padding: '8px 10px', background: 'rgba(234,179,8,0.08)', borderBottom: '1px solid rgba(234,179,8,0.2)', fontSize: '0.65rem', color: 'var(--orange)' }}>
+              <span>Set `GEMINI_API_KEY` or `ANTHROPIC_API_KEY` in `Ai_Agent/.env` or your terminal environment, then restart the backend.</span>
             </div>
           )}
           <div
@@ -808,7 +854,7 @@ export default function AIChatPanel({
               const { scrollTop, scrollHeight, clientHeight } = chatBodyRef.current
               shouldStickToBottomRef.current = scrollHeight - (scrollTop + clientHeight) < 48
             }}
-            style={{ flex: 1, overflowY: 'auto', padding: '10px 8px', display: 'flex', flexDirection: 'column', gap: 10 }}
+            style={{ flex: 1, overflowY: 'auto', padding: '10px 8px', display: 'flex', flexDirection: 'column', gap: 10, scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
             {msgs.filter(m => !(m.role === 'ai' && m.isStreaming && !m.content.trim())).map(m => (
               <div key={m.id} style={{ display: 'flex', gap: 6, flexDirection: m.role === 'user' ? 'row-reverse' : 'row', alignItems: 'flex-start' }}>
@@ -818,7 +864,7 @@ export default function AIChatPanel({
                   </div>
                 )}
                 <div style={{ maxWidth: '88%', display: 'flex', flexDirection: 'column', gap: 3, alignItems: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
-                  <div style={{ padding: '7px 10px', background: m.role === 'user' ? 'var(--blue)' : 'var(--surface-2)', color: m.role === 'user' ? '#fff' : 'var(--text)', borderRadius: m.role === 'user' ? '10px 10px 2px 10px' : '10px 10px 10px 2px', border: '1px solid var(--border)', fontSize: '0.76rem', lineHeight: 1.55, wordBreak: 'break-word' }}>
+                  <div style={{ padding: '7px 10px', background: m.role === 'user' ? 'var(--blue)' : 'var(--surface-2)', color: m.role === 'user' ? '#fff' : 'var(--text)', borderRadius: m.role === 'user' ? '10px 10px 2px 10px' : '10px 10px 10px 2px', border: '1px solid var(--border)', fontSize: '0.76rem', lineHeight: 1.55, wordBreak: 'break-word', userSelect: 'text', WebkitUserSelect: 'text', cursor: 'text' }}>
                     {m.role === 'user' ? m.content : <MD text={m.content} />}
                     {m.isStreaming && <span style={{ display: 'inline-block', width: 7, height: 13, background: 'var(--accent)', animation: 'blink 0.7s infinite', marginLeft: 2, verticalAlign: 'text-bottom', borderRadius: 1 }} />}
                   </div>
@@ -835,100 +881,10 @@ export default function AIChatPanel({
             )}
             <div ref={msgsEndRef} />
           </div>
-          <div style={{ display: 'none' }}>
-            {!currentFile && (
-              <div style={{ padding: '5px 8px', background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.2)', borderRadius: 6, fontSize: '0.65rem', color: 'var(--yellow)', marginBottom: 6 }}>
-                Open a file to ask data-specific questions
-              </div>
-            )}
-            <div style={{ display: 'flex', gap: 5, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '5px 7px' }}>
-              <textarea ref={inputRef} onKeyDown={handleKeyDown} onChange={e => setInputDisplay(e.target.value)}
-                placeholder={currentFile ? 'Ask anything... (Enter to send)' : 'Ask me to create data...'}
-                disabled={busy} rows={1}
-                style={{ flex: 1, border: 'none', background: 'transparent', outline: 'none', resize: 'none', fontSize: '0.76rem', color: 'var(--text)', lineHeight: 1.5, minHeight: 20, maxHeight: 80, fontFamily: 'var(--font-body)', caretColor: 'var(--blue)', opacity: busy ? 0.6 : 1 }}
-                onInput={e => { const el = e.target as HTMLTextAreaElement; el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 80) + 'px' }}
-              />
-              <button onClick={() => send()} disabled={busy || !inputDisplay.trim()}
-                style={{ alignSelf: 'flex-end', width: 26, height: 26, borderRadius: 6, border: 'none', background: inputDisplay.trim() && !busy ? 'var(--blue)' : 'var(--surface-2)', cursor: inputDisplay.trim() && !busy ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background 0.15s' }}>
-                <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={inputDisplay.trim() && !busy ? '#fff' : 'var(--text-muted)'} strokeWidth={2.5}><line x1={22} y1={2} x2={11} y2={13}/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-              </button>
-            </div>
-            <div style={{ fontSize: '0.58rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: 4 }}>↵ send · ⇧↵ newline</div>
-          </div>
           <ChatComposer busy={busy} currentFile={currentFile} onSend={send} />
         </>
       )}
-      {tab === 'settings' && (
-        <div style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {[['Gemini', 'Primary · Free · 60 req/min', keyStatus.gemini], ['HuggingFace', 'Fallback · Free · No quota', keyStatus.hf]].map(([name, sub, active]) => (
-              <div key={name as string} style={{ flex: 1, padding: '6px 10px', borderRadius: 8, background: active ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.06)', border: `1px solid ${active ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.2)'}`, textAlign: 'center' }}>
-                <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)', marginBottom: 2 }}>{name as string}</div>
-                <div style={{ fontSize: '0.72rem', fontWeight: 600, color: active ? 'var(--green)' : 'var(--red)' }}>{active ? '✓ Active' : '✗ Not set'}</div>
-              </div>
-            ))}
-          </div>
-
-          {keyStatus.gemini && keyStatus.hf && (
-            <div style={{ padding: '6px 10px', background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 8, fontSize: '0.68rem', color: 'var(--blue)' }}>
-              ⚡ Auto-fallback on — Gemini quota hit? HuggingFace kicks in automatically
-            </div>
-          )}
-
-          {/* Gemini */}
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <div>
-                <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text)' }}>Gemini API Key</div>
-                <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>Primary · Free · 60 req/min</div>
-              </div>
-              {keyStatus.gemini && <button onClick={() => { setGeminiKey(''); localStorage.removeItem('gemini_key'); setKeyStatus(s => ({ ...s, gemini: false })) }} style={{ background: 'none', border: 'none', color: 'var(--red)', cursor: 'pointer', fontSize: '0.62rem' }}>Remove</button>}
-            </div>
-            <div style={{ position: 'relative' }}>
-              <input type={showGemini ? 'text' : 'password'} value={geminiInput} onChange={e => setGeminiInput(e.target.value)}
-                placeholder={keyStatus.gemini ? '••••••••••• (saved)' : 'AIza...'}
-                style={{ width: '100%', padding: '7px 44px 7px 10px', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text)', fontSize: '0.76rem', boxSizing: 'border-box' as any }} />
-              <button onClick={() => setShowGemini(p => !p)} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.58rem', fontWeight: 700 }}>{showGemini ? 'HIDE' : 'SHOW'}</button>
-            </div>
-            <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)', marginTop: 5 }}>Get free at <strong style={{ color: 'var(--blue)' }}>aistudio.google.com</strong> → Get API key</div>
-          </div>
-
-          {/* HuggingFace */}
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <div>
-                <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text)' }}>HuggingFace Token</div>
-                <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>Fallback · Free · No quota</div>
-              </div>
-              {keyStatus.hf && <button onClick={() => { setHfKey(''); localStorage.removeItem('hf_key'); setKeyStatus(s => ({ ...s, hf: false })) }} style={{ background: 'none', border: 'none', color: 'var(--red)', cursor: 'pointer', fontSize: '0.62rem' }}>Remove</button>}
-            </div>
-            <div style={{ position: 'relative' }}>
-              <input type={showHF ? 'text' : 'password'} value={hfInput} onChange={e => setHfInput(e.target.value)}
-                placeholder={keyStatus.hf ? '••••••••••• (saved)' : 'hf_...'}
-                style={{ width: '100%', padding: '7px 44px 7px 10px', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text)', fontSize: '0.76rem', boxSizing: 'border-box' as any }} />
-              <button onClick={() => setShowHF(p => !p)} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.58rem', fontWeight: 700 }}>{showHF ? 'HIDE' : 'SHOW'}</button>
-            </div>
-            <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)', marginTop: 5 }}>Get free at <strong style={{ color: 'var(--blue)' }}>huggingface.co/settings/tokens</strong> → New token → Read</div>
-          </div>
-
-          {(geminiInput.trim() || hfInput.trim()) && (
-            <button onClick={saveKeys} disabled={saving} style={{ padding: '10px', background: 'var(--blue)', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
-              {saving ? '⟳ Saving...' : '💾 Save Keys'}
-            </button>
-          )}
-
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: 12 }}>
-            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>How fallback works</div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', lineHeight: 1.8 }}>
-              <div>1️⃣ Every request tries <strong>Gemini</strong> first</div>
-              <div>2️⃣ Quota hit? Auto-switches to <strong>HuggingFace</strong></div>
-              <div>3️⃣ No more quota errors</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <style>{`@keyframes blink{0%,100%{opacity:1}50%{opacity:0}} @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}`}</style>
+      <style>{`@keyframes blink{0%,100%{opacity:1}50%{opacity:0}} @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}} aside ::-webkit-scrollbar{display:none}`}</style>
     </aside>
   )
 }
